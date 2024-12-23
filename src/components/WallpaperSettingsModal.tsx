@@ -6,11 +6,11 @@ import { Dropdown } from 'react-native-element-dropdown';
 type Props = PropsWithChildren<{
   isVisible: boolean;
   onClose: () => void;
-  setWallpaper: (duration: string, isRandom: boolean, screen: string) => void;
+  setWallpaper: (duration: number, isRandom: boolean, screen: string) => void;
 }>;
 
 export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: Props) {
-  const [duration, setDuration] = useState<string>('30'); // Store duration as a string for input field
+  const [duration, setDuration] = useState<number>(30); // Store duration in minutes
   const [isRandom, setIsRandom] = useState<boolean>(false); // Track whether wallpapers are random or serial
   const [screen, setScreen] = useState<string>(); // Store the screen where to set wallpaper
 
@@ -31,14 +31,24 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
           <View style={styles.bodyContainer}>
             {/* Duration Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Duration (in hours):</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Enter duration"
-                value={duration}
-                onChangeText={setDuration}
-              />
+              <Text style={styles.label}>Duration (in hours)</Text>
+              <View style={{flexDirection: "row", flex: 2/3,}}>
+                <Pressable
+                  style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
+                  onPress={()=> setDuration(oldDuration => oldDuration - 30)}
+                  disabled={duration==30}
+                  >
+                  <Text style={{textAlign: "center", fontSize: 16, color: `${duration>30? "black": "#fafafa"}`}}>-</Text>
+                </Pressable>
+                <Text style={{flex: 1, textAlign: "center", fontSize: 16, margin: 3}}>{duration/60}</Text>
+                <Pressable
+                  style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
+                  onPress={()=> setDuration(oldDuration => oldDuration + 30)}
+                  disabled={duration==1440}
+                  >
+                  <Text style={{textAlign: "center", fontSize: 16, color: `${duration<1440? "black": "#fafafa"}`}}>+</Text>
+                </Pressable>
+              </View>
             </View>
          
             <Dropdown
@@ -65,8 +75,8 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               <Switch
                 value={isRandom}
                 onValueChange={toggleSwitch}
-                thumbColor={"lightgreen"}
-                trackColor={{ false: "lightgrey", true: "lightgreen" }}
+                thumbColor={`${isRandom? "lightgreen" : "#c0f1f1"}`}
+                trackColor={{ false: "#c0f1f1", true: "lightgreen" }}
               />
             </View>
 
