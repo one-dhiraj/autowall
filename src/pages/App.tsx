@@ -4,7 +4,7 @@ import WallpaperSettings from '../components/WallpaperSettingsModal'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DocumentPicker, {types} from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
-import DeviceWallpaper from "react-native-device-wallpaper";
+import BackgroundFetch from "react-native-background-fetch";
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -18,46 +18,21 @@ import {
   Text,
   View,
 } from 'react-native';
-
-const saveImages = async (images: string[]) => {
-    try {
-      await AsyncStorage.setItem('imageArray', JSON.stringify(images));
-      console.log('Images saved!');
-    } catch (error) {
-      console.error('Failed to save images:', error);
-    }
-  };
-  
-const loadImages = async () => {
-    try {
-        const savedImages = await AsyncStorage.getItem('imageArray');
-        if (savedImages)
-        return JSON.parse(savedImages);
-        return [];
-    } catch (error) {
-        console.error('Failed to load images:', error);
-    }
-};
-
-const saveFileToAppStorage = async (uri: string, fileName: string): Promise<string> => {
-  const destinationPath = `${RNFS.DocumentDirectoryPath}/${fileName}`; // App-specific storage
-  try {
-    await RNFS.copyFile(uri, destinationPath);
-    console.log(`File copied to: ${destinationPath}`);
-    return destinationPath;
-  } catch (error) {
-    console.error('Error copying file:', error);
-    throw error;
-  }
-};
+import { backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
-  const [imageArray, setImageArray] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [localStorage, setLocalStorage] = useState<localStore>({
+    imageArray: [],
+    isRandom: false,
+    screen: "HOME",
+    isTaskRegistered: false,
+    previousIndex: -1,
+  });
   
   const pickImageAsync = async () => {
     try {
-      let tempArray: string[] = await loadImages();
+      let tempArray: string[] = localStorage.imageArray;
     
       const results = await DocumentPicker.pick({
         type: [types.images],
@@ -70,11 +45,10 @@ function App(): React.JSX.Element {
           tempArray.push(`file://${savedPath}`);
         })
       );
-
-      console.log("selected files successfully: ", tempArray);
       
-      setImageArray(tempArray);
-      saveImages(tempArray);
+      let tempLocal = {...localStorage, imageArray: tempArray};
+      setLocalStorage(tempLocal);
+      await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     } catch (err: any) {
       if (DocumentPicker.isCancel(err)) {
         console.log('User canceled the picker');
@@ -91,42 +65,66 @@ function App(): React.JSX.Element {
   const removeImage = async (urlToRemove: string) =>{
     try{
       await RNFS.unlink(urlToRemove.substring(7));
-      let tempArray: string[] = imageArray.filter(uri => uri != urlToRemove);
-      setImageArray(tempArray);
-      await saveImages(tempArray);
+      let tempArray: string[] = localStorage.imageArray.filter(uri => uri != urlToRemove);
+      
+      let tempLocal = {...localStorage, imageArray: tempArray};
+      setLocalStorage(tempLocal);
+      await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     }catch(err){
       console.error("Error occured while file deletion: ", err);
     }
   };
   
-  const setWallpaper = async (duration: string, isRandom: boolean, screen: string) => {
+  const setWallpaper = async (duration: number, isRandom: boolean, screen: string) => {
     if(screen==null)
       Alert.alert("Please select a screen to apply the wallpaper on");
     else
       try {
-        await AsyncStorage.setItem('isRandom', JSON.stringify(isRandom));
-        await AsyncStorage.setItem('screen', JSON.stringify(screen));
-        await AsyncStorage.setItem('lastImageIndex', JSON.stringify(0));        
-        
-        const setWallResult = screen=='HOME'? await DeviceWallpaper.setWallPaper(imageArray[0]) :
-                              screen=='LOCK'? await DeviceWallpaper.setLockScreen(imageArray[0]):
-                              await DeviceWallpaper.setBoth(imageArray[0]);
-
-        console.log("Wallpaper result: ",setWallResult);
-
+        await initBackgroundFetch(duration);
+        let tempLocal = {...localStorage, isRandom, screen, isTaskRegistered: true};
+        setLocalStorage(tempLocal);
+        await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
         onModalClose();
       } catch (error) {
         console.error('Failed to set wallpapers:', error);
       }
   };
 
-  useEffect(()=>{
-    const fetchImages = async () => {
-      const defImageArray = await loadImages();
-      setImageArray(defImageArray);
-    };
+  /// Configure BackgroundFetch.
+  const initBackgroundFetch = async (duration: number) => {
+    const status: number = await BackgroundFetch.configure({
+      minimumFetchInterval: duration,      // <-- minutes (15 is minimum allowed)
+      stopOnTerminate: false,
+      enableHeadless: true,
+      startOnBoot: true,
+      // Android options
+      forceAlarmManager: false,      // <-- Set true to bypass JobScheduler.
+    }, backgroundFetchHeadlessTask
+    , (taskId:string) => {
+      // Oh No!  Our task took too long to complete and the OS has signalled
+      // that this task must be finished immediately.
+      console.log('[Fetch] TIMEOUT taskId:', taskId);
+      BackgroundFetch.finish(taskId);
+    });
 
-    fetchImages();
+    console.log("Background task configured: ", status);
+  }
+
+  const stopBackgroundTask = async () => {
+    await BackgroundFetch.stop();
+    let tempLocal = {...localStorage, isTaskRegistered: false};
+    setLocalStorage(tempLocal);
+    await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+  }
+
+  useEffect(()=>{
+    const fetchLocalStore = async () => {
+      const localSt = await AsyncStorage.getItem('localStorage');
+      if(localSt)
+        setLocalStorage(JSON.parse(localSt));
+    }
+
+    fetchLocalStore();
   },[])
   
   return (
@@ -134,9 +132,9 @@ function App(): React.JSX.Element {
       <StatusBar barStyle={"default"}/>
         <View style={styles.appContainer}>
         <ScrollView>
-          {imageArray.length !=0 ?
+          {localStorage.imageArray.length !=0 ?
             <View style={styles.imageCard}>
-              {imageArray.map((url, index) =>
+              {localStorage.imageArray.map((url, index) =>
                 <ImageCard key={index} url={url} removeImage={removeImage} />
               )}
             </View>
@@ -155,12 +153,12 @@ function App(): React.JSX.Element {
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
             </Pressable>
             <View style={styles.nestedButtonContainer}>
-            <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={()=> setIsModalVisible(true)} disabled={imageArray.length==0}>
-              <Text  style={[styles.buttonLabel, {color: `${imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
+            <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={()=> setIsModalVisible(true)} disabled={localStorage.imageArray.length==0}>
+              <Text  style={[styles.buttonLabel, {color: `${localStorage.imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
             </Pressable>
-            {/* <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={removeBackgroundTask} disabled={!isTaskRegistered}>
-              <Text  style={[styles.buttonLabel, {color: `${!isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
-            </Pressable> */}
+            <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={stopBackgroundTask} disabled={!localStorage.isTaskRegistered}>
+              <Text  style={[styles.buttonLabel, {color: `${!localStorage.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
+            </Pressable>
             </View>
           </View>
         </View>

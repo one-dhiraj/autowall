@@ -13,6 +13,7 @@
     "@react-native-async-storage/async-storage": "^2.1.0",
     "react": "18.3.1",
     "react-native": "0.76.5",
+    "react-native-background-fetch": "^4.2.7",
     "react-native-device-wallpaper": "github:juanamd/react-native-device-wallpaper",
     "react-native-document-picker": "^9.3.1",
     "react-native-element-dropdown": "^2.12.2",
