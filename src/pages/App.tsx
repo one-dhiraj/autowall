@@ -129,7 +129,7 @@ function App(): React.JSX.Element {
   
   return (
     <SafeAreaView style={styles.app}>
-      <StatusBar barStyle={"default"}/>
+      
         <View style={styles.appContainer}>
         <ScrollView>
           {localStorage.imageArray.length !=0 ?
