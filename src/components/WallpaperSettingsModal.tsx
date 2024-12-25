@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, TextInput, Switch } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, TextInput, Switch, TouchableOpacity, Linking } from 'react-native';
 import { PropsWithChildren } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type Props = PropsWithChildren<{
   isVisible: boolean;
@@ -21,38 +22,39 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
       <View style={styles.modalBackground} onTouchEnd={onClose}>
         <View style={styles.modalContent} onTouchEnd={(e)=> e.stopPropagation()}>
           {/* Title and Close Button */}
-          <View style={styles.titleContainer}>
+          <View style={[styles.container, {marginBottom: 10}]}>
             <Text style={styles.title}>Customize Behavior</Text>
             <Pressable onPress={onClose}>
-              <Text>X</Text>
+              <Icon name="close" size={20} />
             </Pressable>
           </View>
 
           <View style={styles.bodyContainer}>
             {/* Duration Input */}
-            <View style={styles.inputContainer}>
+            <View style={styles.container}>
               <Text style={styles.label}>Duration (in hours)</Text>
               <View style={{flexDirection: "row", flex: 2/3,}}>
-                <Pressable
+                <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
                   onPress={()=> setDuration(oldDuration => oldDuration - 30)}
                   disabled={duration==30}
                   >
                   <Text style={{textAlign: "center", fontSize: 16, color: `${duration>30? "black": "#fafafa"}`}}>-</Text>
-                </Pressable>
+                </TouchableOpacity>
                 <Text style={{flex: 1, textAlign: "center", fontSize: 16, margin: 3}}>{duration/60}</Text>
-                <Pressable
+                <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
                   onPress={()=> setDuration(oldDuration => oldDuration + 30)}
                   disabled={duration==1440}
                   >
                   <Text style={{textAlign: "center", fontSize: 16, color: `${duration<1440? "black": "#fafafa"}`}}>+</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             </View>
          
+            <View style={{marginVertical: 10, position: "relative"}}>
             <Dropdown
-              style={styles.dropdown}
+              style={[styles.dropdown, {borderColor: `${screen==undefined ? "red" : 'gray'}`}]}
               data={[
                 {label: 'Home Screen', value: 'HOME'},
                 {label: 'Lock Screen', value: 'LOCK'},
@@ -68,9 +70,11 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               value={screen}
               onChange={item => setScreen(item.value)}
             />
+            <Text style={{position: "absolute", bottom: -20, padding: 3, color: `${screen==undefined?"red": "white"}`, fontSize:12, fontWeight: 300}}>Please select a wallpaper screen</Text>
+            </View>
 
             {/* Random/Serial Switch */}
-            <View style={styles.switchContainer}>
+            <View style={styles.container}>
               <Text style={styles.label}>Shuffle between Wallpapers</Text>
               <Switch
                 value={isRandom}
@@ -81,12 +85,13 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
             </View>
 
             {/* Set Wallpaper Button */}
-            <Pressable
+            <TouchableOpacity
+              activeOpacity={0.6}
               style={[styles.button, { backgroundColor: 'lightgreen' }]}
               onPress={() => setWallpaper(duration, isRandom, screen!)}
             >
               <Text style={styles.buttonLabel}>Set Wallpaper</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -99,10 +104,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(75,75,75, 0.7)",
   },
   modalContent: {
-    height: 300,
+    height: 280,
     width: '90%',
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     borderWidth: 1,
   },
-  titleContainer: {
+  container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -121,24 +126,12 @@ const styles = StyleSheet.create({
   },
   bodyContainer: {
     flex: 1,
-    justifyContent: 'space-evenly',
-  },
-  inputContainer: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  switchContainer: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
+    paddingTop: 5
   },
   label: {
     flex: 1,
     fontSize: 14,
-    marginBottom: 5,
   },
   input: {
     flex: 1,
@@ -150,9 +143,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   dropdown: {
-    marginTop: 10,
     height: 40,
-    borderColor: 'gray',
     borderWidth: 0.5,
     borderRadius: 8,
     paddingHorizontal: 8,

@@ -1,5 +1,5 @@
-import React, { Key, useState } from 'react'
-import { Alert, Pressable, StyleSheet, Text, View, Modal, Dimensions, Image } from 'react-native'
+import React, { useState } from 'react'
+import { Pressable, StyleSheet, Text, View, Modal, Image, TouchableOpacity } from 'react-native'
 
 type props = {
   url: string,
@@ -17,23 +17,26 @@ export default function ImageCard({url, removeImage}: props) {
 
   return (
     <View style={styles.app}>
-      <Pressable onLongPress={()=>setIsModalVisible(true)}>
+      <TouchableOpacity activeOpacity={0.75} onLongPress={()=>setIsModalVisible(true)}>
         <Image source={{uri: url}} style={styles.image}/>
-      </Pressable>
+      </TouchableOpacity>
       
       {/* Modal for Image */}
       <Modal transparent={true} visible={isModalVisible} animationType="fade">
         <View style={styles.modalBackground} onTouchEnd={onModalClose}>
           <View style={styles.modalContent}>
             {/* Enlarged Image */}
+            <View style={{width: "95%"}}>
             <Image
               source={{uri: url}}
               style={styles.enlargedImage}
               />
+
+            </View>
             {/* Remove Button */}
-            <Pressable style={styles.removeButton} onPress={()=> removeImage(url)}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.removeButton} onPress={()=> removeImage(url)}>
               <Text style={styles.removeButtonText}>Remove Image</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -55,17 +58,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: "rgba(0,0,0, 0.75)",
+    backgroundColor: "rgba(75,75,75, 0.7)",
   },
   modalContent: {
     justifyContent: "center",
     alignItems: 'center',
     width: "100%",
-    
   },
   enlargedImage: {
-    aspectRatio: 1,
-    height: "77%",
+    width: "100%",
+    aspectRatio: 2/3,
+    borderRadius: 5,
     resizeMode: "contain",
   },
   removeButton: {
@@ -73,7 +76,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 25,
     borderRadius: 10,
-    marginVertical: 10,
+    marginVertical: 20,
   },
   removeButtonText: {
     color: '#fff',

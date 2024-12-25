@@ -16,12 +16,14 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
+  ToastAndroid
 } from 'react-native';
 import { backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
   const [localStorage, setLocalStorage] = useState<localStore>({
     imageArray: [],
     isRandom: false,
@@ -58,8 +60,8 @@ function App(): React.JSX.Element {
     }
   };
   
-  const onModalClose = () => {
-    setIsModalVisible(false);
+  const onWallpaperModalClose = () => {
+    setIsWallpaperModalVisible(false);
   };
 
   const removeImage = async (urlToRemove: string) =>{
@@ -76,15 +78,14 @@ function App(): React.JSX.Element {
   };
   
   const setWallpaper = async (duration: number, isRandom: boolean, screen: string) => {
-    if(screen==null)
-      Alert.alert("Please select a screen to apply the wallpaper on");
-    else
+   if(screen!=null)
       try {
         await initBackgroundFetch(duration);
         let tempLocal = {...localStorage, isRandom, screen, isTaskRegistered: true};
         setLocalStorage(tempLocal);
         await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
-        onModalClose();
+        onWallpaperModalClose();
+        ToastAndroid.show('Wallpapers configured successfully!', ToastAndroid.SHORT)
       } catch (error) {
         console.error('Failed to set wallpapers:', error);
       }
@@ -129,40 +130,40 @@ function App(): React.JSX.Element {
   
   return (
     <SafeAreaView style={styles.app}>
-      
+      <StatusBar barStyle={'dark-content'} backgroundColor={"transparent"} />
         <View style={styles.appContainer}>
-        <ScrollView>
           {localStorage.imageArray.length !=0 ?
-            <View style={styles.imageCard}>
-              {localStorage.imageArray.map((url, index) =>
-                <ImageCard key={index} url={url} removeImage={removeImage} />
-              )}
-            </View>
+            <ScrollView>
+              <View style={styles.imageCard}>
+                {localStorage.imageArray.map((url, index) =>
+                  <ImageCard key={index} url={url} removeImage={removeImage} />
+                )}
+              </View>
+            </ScrollView>
           :
             <View style={styles.noImageContainer}>
               <View style={{width: "100%", height: 400}}>
-                <Image source={NoImage} style={{width: "100%", height: "100%"}}/>
+                <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
               </View>
               <Text style={{textAlign: "center", fontSize: 16}}>Select a picture to get started 👇</Text>
             </View>
           }
-        </ScrollView>
           
           <View style={styles.buttonContainer}>
-            <Pressable style={[styles.button, {backgroundColor: "lightgreen"}]} onPress={pickImageAsync}>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "lightgreen"}]} onPress={pickImageAsync}>
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
-            </Pressable>
+            </TouchableOpacity>
             <View style={styles.nestedButtonContainer}>
-            <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={()=> setIsModalVisible(true)} disabled={localStorage.imageArray.length==0}>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={localStorage.imageArray.length==0}>
               <Text  style={[styles.buttonLabel, {color: `${localStorage.imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
-            </Pressable>
-            <Pressable style={[styles.button, {backgroundColor: "#c0f1f1", width: "48%"}]} onPress={stopBackgroundTask} disabled={!localStorage.isTaskRegistered}>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage.isTaskRegistered}>
               <Text  style={[styles.buttonLabel, {color: `${!localStorage.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
-            </Pressable>
+            </TouchableOpacity>
             </View>
           </View>
         </View>
-        <WallpaperSettings isVisible={isModalVisible} onClose={onModalClose} setWallpaper={setWallpaper}/>
+        <WallpaperSettings isVisible={isWallpaperModalVisible} onClose={onWallpaperModalClose} setWallpaper={setWallpaper}/>
     </SafeAreaView>
   )
 }
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     width: "90%",
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 10,
     gap: 10,
   },
@@ -194,10 +195,8 @@ const styles = StyleSheet.create({
   },
 
   noImageContainer:{
-    flex:1,
-    height: 550,
+    flex: 1,
     justifyContent: "center",
-    gap: 5,
   },
 
   buttonContainer: {
@@ -205,7 +204,7 @@ const styles = StyleSheet.create({
   },
   nestedButtonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    gap: 5
   },
   
   button: {
