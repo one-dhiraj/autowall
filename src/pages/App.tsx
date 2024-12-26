@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DocumentPicker, {types} from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
 import BackgroundFetch from "react-native-background-fetch";
+import BootSplash from "react-native-bootsplash";
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -24,17 +25,11 @@ import { backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '.
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
-  const [localStorage, setLocalStorage] = useState<localStore>({
-    imageArray: [],
-    isRandom: false,
-    screen: "HOME",
-    isTaskRegistered: false,
-    previousIndex: -1,
-  });
+  const [localStorage, setLocalStorage] = useState<localStore>();
   
   const pickImageAsync = async () => {
     try {
-      let tempArray: string[] = localStorage.imageArray;
+      let tempArray: string[] = localStorage!.imageArray;
     
       const results = await DocumentPicker.pick({
         type: [types.images],
@@ -48,7 +43,7 @@ function App(): React.JSX.Element {
         })
       );
       
-      let tempLocal = {...localStorage, imageArray: tempArray};
+      let tempLocal = {...localStorage!, imageArray: tempArray};
       setLocalStorage(tempLocal);
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     } catch (err: any) {
@@ -67,9 +62,9 @@ function App(): React.JSX.Element {
   const removeImage = async (urlToRemove: string) =>{
     try{
       await RNFS.unlink(urlToRemove.substring(7));
-      let tempArray: string[] = localStorage.imageArray.filter(uri => uri != urlToRemove);
+      let tempArray: string[] = localStorage!.imageArray.filter(uri => uri != urlToRemove);
       
-      let tempLocal = {...localStorage, imageArray: tempArray};
+      let tempLocal = {...localStorage!, imageArray: tempArray};
       setLocalStorage(tempLocal);
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     }catch(err){
@@ -81,7 +76,7 @@ function App(): React.JSX.Element {
    if(screen!=null)
       try {
         await initBackgroundFetch(duration);
-        let tempLocal = {...localStorage, isRandom, screen, isTaskRegistered: true};
+        let tempLocal = {...localStorage!, isRandom, screen, isTaskRegistered: true};
         setLocalStorage(tempLocal);
         await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
         onWallpaperModalClose();
@@ -113,7 +108,7 @@ function App(): React.JSX.Element {
 
   const stopBackgroundTask = async () => {
     await BackgroundFetch.stop();
-    let tempLocal = {...localStorage, isTaskRegistered: false};
+    let tempLocal = {...localStorage!, isTaskRegistered: false};
     setLocalStorage(tempLocal);
     await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
   }
@@ -121,21 +116,32 @@ function App(): React.JSX.Element {
   useEffect(()=>{
     const fetchLocalStore = async () => {
       const localSt = await AsyncStorage.getItem('localStorage');
-      if(localSt)
+      if(localSt){
         setLocalStorage(JSON.parse(localSt));
+      }else{
+        setLocalStorage({
+          imageArray: [],
+          isRandom: false,
+          screen: "HOME",
+          isTaskRegistered: false,
+          previousIndex: -1,
+        });
+      }
     }
 
-    fetchLocalStore();
+    fetchLocalStore().finally(async () => {
+      await BootSplash.hide({fade: true});
+    });
   },[])
   
   return (
     <SafeAreaView style={styles.app}>
       <StatusBar barStyle={'dark-content'} backgroundColor={"transparent"} />
         <View style={styles.appContainer}>
-          {localStorage.imageArray.length !=0 ?
+          {localStorage?.imageArray.length !=0 ?
             <ScrollView>
               <View style={styles.imageCard}>
-                {localStorage.imageArray.map((url, index) =>
+                {localStorage?.imageArray.map((url, index) =>
                   <ImageCard key={index} url={url} removeImage={removeImage} />
                 )}
               </View>
@@ -154,11 +160,11 @@ function App(): React.JSX.Element {
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
             </TouchableOpacity>
             <View style={styles.nestedButtonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={localStorage.imageArray.length==0}>
-              <Text  style={[styles.buttonLabel, {color: `${localStorage.imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={localStorage?.imageArray.length==0}>
+              <Text  style={[styles.buttonLabel, {color: `${localStorage?.imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage.isTaskRegistered}>
-              <Text  style={[styles.buttonLabel, {color: `${!localStorage.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered}>
+              <Text  style={[styles.buttonLabel, {color: `${!localStorage?.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
             </TouchableOpacity>
             </View>
           </View>
