@@ -22,7 +22,7 @@ export default function ImageCard({url, removeImage}: props) {
       </TouchableOpacity>
       
       {/* Modal for Image */}
-      <Modal transparent={true} visible={isModalVisible} animationType="fade">
+      <Modal statusBarTranslucent transparent={true} visible={isModalVisible} animationType="fade">
         <View style={styles.modalBackground} onTouchEnd={onModalClose}>
           <View style={styles.modalContent}>
             {/* Enlarged Image */}

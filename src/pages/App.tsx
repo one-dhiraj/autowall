@@ -9,9 +9,7 @@ import BootSplash from "react-native-bootsplash";
 
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -19,7 +17,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ToastAndroid
+  ToastAndroid,
 } from 'react-native';
 import { backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
@@ -64,7 +62,11 @@ function App(): React.JSX.Element {
       await RNFS.unlink(urlToRemove.substring(7));
       let tempArray: string[] = localStorage!.imageArray.filter(uri => uri != urlToRemove);
       
-      let tempLocal = {...localStorage!, imageArray: tempArray};
+      let tempLocal = {
+        ...localStorage!,
+        imageArray: tempArray,
+        previousIndex: tempArray.length>localStorage!.previousIndex ? localStorage!.previousIndex : -1
+      };
       setLocalStorage(tempLocal);
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     }catch(err){

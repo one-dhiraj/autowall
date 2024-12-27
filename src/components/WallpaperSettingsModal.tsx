@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, TextInput, Switch, TouchableOpacity, Linking } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing } from 'react-native';
 import { PropsWithChildren } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
+import OctIcons from 'react-native-vector-icons/Octicons'
+import {OpenOptimizationSettings } from "react-native-battery-optimization-check";
 
 type Props = PropsWithChildren<{
   isVisible: boolean;
@@ -17,14 +19,38 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
 
   const toggleSwitch = () => setIsRandom((prev) => !prev);
 
+  const slideAnim = useRef(new Animated.Value(300)).current; // Initially off-screen
+
+  // Animate modal in when it becomes visible
+  if (isVisible) {
+    Animated.timing(slideAnim, {
+      toValue: 0, // Fully visible (original position)
+      duration: 200,
+      easing: Easing.ease,
+      useNativeDriver: false,
+    }).start();
+  }
+
+  // Animate modal out when it closes
+  const handleClose = () => {
+    Animated.timing(slideAnim, {
+      toValue: 350, // Slide out of the view
+      duration: 200,
+      easing: Easing.ease,
+      useNativeDriver: false,
+    }).start(() => {
+      onClose(); // Notify the parent to update visibility
+    });
+  };
+
   return (
-    <Modal animationType="none" transparent={true} visible={isVisible}>
-      <View style={styles.modalBackground} onTouchEnd={onClose}>
-        <View style={styles.modalContent} onTouchEnd={(e)=> e.stopPropagation()}>
+    <Modal animationType='fade' statusBarTranslucent transparent={true} visible={isVisible}>
+      <View style={styles.modalBackground} onTouchEnd={handleClose}>
+        <Animated.View style={[styles.modalContent, {transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
           {/* Title and Close Button */}
           <View style={[styles.container, {marginBottom: 10}]}>
             <Text style={styles.title}>Customize Behavior</Text>
-            <Pressable onPress={onClose}>
+            <Pressable onPress={handleClose}>
               <Icon name="close" size={20} />
             </Pressable>
           </View>
@@ -52,7 +78,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               </View>
             </View>
          
-            <View style={{marginVertical: 10, position: "relative"}}>
+            <View style={{position: "relative"}}>
             <Dropdown
               style={[styles.dropdown, {borderColor: `${screen==undefined ? "red" : 'gray'}`}]}
               data={[
@@ -64,6 +90,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               itemTextStyle={styles.label}
               selectedTextStyle={styles.label}
               itemContainerStyle={styles.itemContainer}
+              containerStyle={styles.dropContainer}
               labelField="label"
               valueField="value"
               placeholder={'Select wallpaper screen'}
@@ -84,16 +111,24 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               />
             </View>
 
+            <View style={styles.container}>
+            <Text style={{fontSize: 14, textAlign: "justify", color: "rgb(77, 78, 79)"}}>Disable Battery Optimizations{`\n`}for reliable wallpaper transitions</Text>
+            <Pressable onPress={OpenOptimizationSettings}>
+                <OctIcons style={{marginRight: 15}} name="link-external" size={20} color="rgb(77, 78, 79)"/>
+            </Pressable>
+            </View>
+
             {/* Set Wallpaper Button */}
             <TouchableOpacity
               activeOpacity={0.6}
-              style={[styles.button, { backgroundColor: 'lightgreen' }]}
+              style={[styles.button, { backgroundColor: 'lightgreen', opacity: Number(`${screen==undefined ? 0.5 : 1}`) }]}
               onPress={() => setWallpaper(duration, isRandom, screen!)}
+              disabled={screen==undefined}
             >
-              <Text style={styles.buttonLabel}>Set Wallpaper</Text>
+              <Text style={{color: `${screen==undefined ? '#fff' : '#000'}`, fontSize: 16,}}>Set Wallpaper</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -102,18 +137,15 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "flex-end",
     backgroundColor: "rgba(75,75,75, 0.7)",
   },
   modalContent: {
-    height: 280,
-    width: '90%',
+    height: 350,
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 15,
-    borderStyle: "solid",
-    borderWidth: 1,
   },
   container: {
     flexDirection: 'row',
@@ -130,17 +162,7 @@ const styles = StyleSheet.create({
     paddingTop: 5
   },
   label: {
-    flex: 1,
     fontSize: 14,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 8,
-    fontSize: 16,
-    textAlign: 'center',
   },
   dropdown: {
     height: 40,
@@ -150,7 +172,10 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     borderRadius: 10,
-    
+  },
+  dropContainer: {
+    borderRadius: 10,
+    top: -32
   },
   button: {
     borderRadius: 10,
@@ -159,9 +184,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     marginVertical: 3,
-  },
-  buttonLabel: {
-    color: '#000',
-    fontSize: 16,
   },
 });
