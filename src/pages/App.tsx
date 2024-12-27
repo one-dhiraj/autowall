@@ -68,6 +68,10 @@ function App(): React.JSX.Element {
         previousIndex: tempArray.length>localStorage!.previousIndex ? localStorage!.previousIndex : -1
       };
       setLocalStorage(tempLocal);
+      
+      if(tempLocal.imageArray.length==0)
+        stopBackgroundTask();
+
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     }catch(err){
       console.error("Error occured while file deletion: ", err);
