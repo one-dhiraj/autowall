@@ -18,8 +18,9 @@ import {
   TouchableOpacity,
   View,
   ToastAndroid,
+  Alert,
 } from 'react-native';
-import { backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
+import { applyWallpaper, backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
@@ -46,9 +47,8 @@ function App(): React.JSX.Element {
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
     } catch (err: any) {
       if (DocumentPicker.isCancel(err)) {
-        console.log('User canceled the picker');
       } else {
-        console.error('File picker error:', err);
+        Alert.alert("Error", "Something went wrong please try again!");
       }
     }
   };
@@ -85,8 +85,9 @@ function App(): React.JSX.Element {
         let tempLocal = {...localStorage!, isRandom, screen, isTaskRegistered: true};
         setLocalStorage(tempLocal);
         await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+        await applyWallpaper();
         onWallpaperModalClose();
-        ToastAndroid.show('Wallpapers configured successfully!', ToastAndroid.SHORT)
+        ToastAndroid.show('Wallpapers configured successfully!', ToastAndroid.SHORT);
       } catch (error) {
         console.error('Failed to set wallpapers:', error);
       }
@@ -105,11 +106,8 @@ function App(): React.JSX.Element {
     , (taskId:string) => {
       // Oh No!  Our task took too long to complete and the OS has signalled
       // that this task must be finished immediately.
-      console.log('[Fetch] TIMEOUT taskId:', taskId);
       BackgroundFetch.finish(taskId);
     });
-
-    console.log("Background task configured: ", status);
   }
 
   const stopBackgroundTask = async () => {
@@ -157,7 +155,7 @@ function App(): React.JSX.Element {
               <View style={{width: "100%", height: 400}}>
                 <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
               </View>
-              <Text style={{textAlign: "center", fontSize: 16}}>Select a picture to get started 👇</Text>
+              <Text style={{textAlign: "center", fontSize: 16}}>Select two or more pictures to proceed 👇</Text>
             </View>
           }
           
@@ -166,8 +164,8 @@ function App(): React.JSX.Element {
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
             </TouchableOpacity>
             <View style={styles.nestedButtonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={localStorage?.imageArray.length==0}>
-              <Text  style={[styles.buttonLabel, {color: `${localStorage?.imageArray.length==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={Number(localStorage?.imageArray.length)<2}>
+              <Text  style={[styles.buttonLabel, {color: `${Number(localStorage?.imageArray.length)<2?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered}>
               <Text  style={[styles.buttonLabel, {color: `${!localStorage?.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
