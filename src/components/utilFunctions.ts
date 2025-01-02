@@ -12,12 +12,17 @@ export interface localStore {
 }
 
 const findNextIndex = (tempStore: localStore): number => {
-  let arrayLength = tempStore.imageArray.length;
-  
-  if(!tempStore.isRandom)
-    return (tempStore.previousIndex + 1) % arrayLength;
-  else
-    return Math.floor(Math.random() * arrayLength);
+  let newIndex = tempStore.previousIndex;
+  while(newIndex==tempStore.previousIndex){
+    let arrayLength = tempStore.imageArray.length;
+    
+    if(!tempStore.isRandom)
+      newIndex = (tempStore.previousIndex + 1) % arrayLength;
+    else
+      newIndex = Math.floor(Math.random() * arrayLength);
+  }
+
+  return newIndex;
 }
 
 const saveFileToAppStorage = async (uri: string, fileName: string): Promise<string> => {
@@ -31,20 +36,15 @@ const saveFileToAppStorage = async (uri: string, fileName: string): Promise<stri
   }
 };
 
-const backgroundFetchHeadlessTask = async (event) => {
-    let currentTime = new Date();
-    if (event.timeout) {
-        console.log(`[BackgroundFetch] HeadlessTask timeout: ${event.taskId} @ ${currentTime.toLocaleTimeString()}`);
-        BackgroundFetch.finish(event.taskId);
-        return;
-    }
+const applyWallpaper = async() => {
+  let tempVariable = await AsyncStorage.getItem('localStorage');
 
-    let tempVariable = await AsyncStorage.getItem('localStorage');
+  if(tempVariable === null){
+    return;
+  }else{
+    let tempStore:localStore = JSON.parse(tempVariable);
 
-    if(tempVariable === null){
-      console.log('[BackgroundFetch] HeadlessTask Wallpaper result: tempVariable is null');
-    }else{
-      let tempStore:localStore = JSON.parse(tempVariable);
+    if(tempStore.imageArray.length != 0){
       let nextWallIndex: number = findNextIndex(tempStore);
 
       let setWallResult = tempStore.screen=='HOME'? await DeviceWallpaper.setWallPaper(tempStore.imageArray[nextWallIndex]):
@@ -53,9 +53,18 @@ const backgroundFetchHeadlessTask = async (event) => {
     
       tempStore = {...tempStore, previousIndex: nextWallIndex};
       await AsyncStorage.setItem('localStorage', JSON.stringify(tempStore));
-
-      console.log(`[BackgroundFetch] HeadlessTask Wallpaper result: ${setWallResult} @ ${currentTime.toLocaleTimeString()}`);
     }
+  }
+}
+
+const backgroundFetchHeadlessTask = async (event) => {
+    let currentTime = new Date();
+    if (event.timeout) {
+        BackgroundFetch.finish(event.taskId);
+        return;
+    }
+
+    await applyWallpaper();
 
     // Required:  Signal to native code that your task is complete.
     // If you don't do this, your app could be terminated and/or assigned
@@ -63,4 +72,4 @@ const backgroundFetchHeadlessTask = async (event) => {
     BackgroundFetch.finish(event.taskId);
 }
 
-export {saveFileToAppStorage, backgroundFetchHeadlessTask};
+export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper};
