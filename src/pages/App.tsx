@@ -19,8 +19,9 @@ import {
   View,
   ToastAndroid,
   Alert,
+  BackHandler,
 } from 'react-native';
-import { applyWallpaper, backgroundFetchHeadlessTask, localStore, saveFileToAppStorage } from '../components/utilFunctions';
+import { applyWallpaper, backgroundFetchHeadlessTask, fetchLocalStore, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
@@ -42,9 +43,7 @@ function App(): React.JSX.Element {
         })
       );
       
-      let tempLocal = {...localStorage!, imageArray: tempArray};
-      setLocalStorage(tempLocal);
-      await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+      await updateLocalStorage({imageArray: tempArray});
     } catch (err: any) {
       if (DocumentPicker.isCancel(err)) {
       } else {
@@ -62,17 +61,15 @@ function App(): React.JSX.Element {
       await RNFS.unlink(urlToRemove.substring(7));
       let tempArray: string[] = localStorage!.imageArray.filter(uri => uri != urlToRemove);
       
-      let tempLocal = {
-        ...localStorage!,
-        imageArray: tempArray,
-        previousIndex: tempArray.length>localStorage!.previousIndex ? localStorage!.previousIndex : -1
-      };
-      setLocalStorage(tempLocal);
+      if(tempArray.length==0){
+        await BackgroundFetch.stop();
+      }
       
-      if(tempLocal.imageArray.length==0)
-        stopBackgroundTask();
-
-      await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+      await updateLocalStorage({
+        imageArray: tempArray,
+        previousIndex: tempArray.length>localStorage!.previousIndex ? localStorage!.previousIndex : -1,
+        isTaskRegistered: tempArray.length==0? false: localStorage!.isTaskRegistered
+      })
     }catch(err){
       console.error("Error occured while file deletion: ", err);
     }
@@ -82,10 +79,9 @@ function App(): React.JSX.Element {
    if(screen!=null)
       try {
         await initBackgroundFetch(duration);
-        let tempLocal = {...localStorage!, isRandom, screen, isTaskRegistered: true};
-        setLocalStorage(tempLocal);
-        await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+        await updateLocalStorage({isRandom: isRandom, screen: screen, isTaskRegistered: true});
         await applyWallpaper();
+        await updateLocalStorage({});
         onWallpaperModalClose();
         ToastAndroid.show('Wallpapers configured successfully!', ToastAndroid.SHORT);
       } catch (error) {
@@ -112,28 +108,29 @@ function App(): React.JSX.Element {
 
   const stopBackgroundTask = async () => {
     await BackgroundFetch.stop();
-    let tempLocal = {...localStorage!, isTaskRegistered: false};
-    setLocalStorage(tempLocal);
-    await AsyncStorage.setItem('localStorage', JSON.stringify(tempLocal));
+    await updateLocalStorage({isTaskRegistered: false});
+    ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
   }
 
-  useEffect(()=>{
-    const fetchLocalStore = async () => {
-      const localSt = await AsyncStorage.getItem('localStorage');
-      if(localSt){
-        setLocalStorage(JSON.parse(localSt));
-      }else{
-        setLocalStorage({
-          imageArray: [],
-          isRandom: false,
-          screen: "HOME",
-          isTaskRegistered: false,
-          previousIndex: -1,
-        });
-      }
-    }
+  const updateLocalStorage = async (newData: Partial<localStore>) => {
+    try {
+      var localSt: localStore = await fetchLocalStore();
+      
+      // Update state
+      const updatedData: localStore = { ...localSt, ...newData };
+      setLocalStorage(updatedData);
 
-    fetchLocalStore().finally(async () => {
+      // Update AsyncStorage
+      await AsyncStorage.setItem('localStorage', JSON.stringify(updatedData));
+    } catch (error) {
+      console.error("Failed to update local storage:", error);
+    }
+  };
+
+  useEffect(()=>{
+    fetchLocalStore().then((localSt: localStore)=>{
+      setLocalStorage(localSt)
+    }).finally(async () => {
       await BootSplash.hide({fade: true});
     });
   },[])

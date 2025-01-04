@@ -72,4 +72,19 @@ const backgroundFetchHeadlessTask = async (event) => {
     BackgroundFetch.finish(event.taskId);
 }
 
-export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper};
+const fetchLocalStore = async () => {
+  var localSt = await AsyncStorage.getItem('localStorage');
+  if(localSt){
+    return JSON.parse(localSt);
+  }else{
+    return {
+      imageArray: [],
+      isRandom: false,
+      screen: "HOME",
+      isTaskRegistered: false,
+      previousIndex: -1,
+    };
+  }
+}
+
+export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper, fetchLocalStore};
