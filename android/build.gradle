@@ -6,7 +6,7 @@ buildscript {
         targetSdkVersion = 34
         ndkVersion = "26.1.10909125"
         kotlinVersion = "1.9.24"
-        VERSION_NAME = project.hasProperty('VERSION_NAME') ? project.VERSION_NAME : rootProject.file("package.json").text.readLines().find { it.contains('"version"') }.split(":")[1].trim().replace('"', '').replace(',', '')
+        versionName = project.hasProperty('VERSION_NAME') ? project.VERSION_NAME : new File("${projectDir.parent}/package.json").text.readLines().find { it.contains('"version"') }.split(":")[1].trim().replace('"', '').replace(',', '')
     }
     repositories {
         google()

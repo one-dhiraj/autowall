@@ -72,7 +72,6 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
-def versionName = project.hasProperty("VERSION_NAME") ? project.VERSION_NAME : "1.0.0"
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -85,7 +84,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
-        versionName versionName
+        versionName rootProject.ext.versionName
     }
     signingConfigs {
         debug {
