@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing, ActivityIndicator } from 'react-native';
 import { PropsWithChildren } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -16,6 +16,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
   const [duration, setDuration] = useState<number>(30); // Store duration in minutes
   const [isRandom, setIsRandom] = useState<boolean>(false); // Track whether wallpapers are random or serial
   const [screen, setScreen] = useState<string>(); // Store the screen where to set wallpaper
+  const [isSettingWallpaper, setIsSettingWallpaper] = useState<boolean>(false);
 
   const toggleSwitch = () => setIsRandom((prev) => !prev);
 
@@ -43,8 +44,27 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
     });
   };
 
+  const updateDuration = (multiplier:number, currHour: number) => {
+    let change:number = 30;
+    if(currHour >= 24)
+      change = 360;
+    else if(currHour >= 6)
+      change = 60;
+
+    setDuration(oldDuration => oldDuration + (multiplier*change))
+  }
+
+  const handleSetWallpaper = () => {
+    setIsSettingWallpaper(true);
+    setWallpaper(duration, isRandom, screen!)
+  }
+
+  useEffect(()=>{
+    setIsSettingWallpaper(false);
+  },[isVisible])
+
   return (
-    <Modal animationType='fade' statusBarTranslucent transparent={true} visible={isVisible}>
+    <Modal animationType='fade' statusBarTranslucent transparent={true} visible={isVisible} onRequestClose={handleClose}>
       <View style={styles.modalBackground} onTouchEnd={handleClose}>
         <Animated.View style={[styles.modalContent, {transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
           {/* Title and Close Button */}
@@ -62,7 +82,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               <View style={{flexDirection: "row", flex: 2/3,}}>
                 <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
-                  onPress={()=> setDuration(oldDuration => oldDuration - 30)}
+                  onPress={()=> updateDuration(-1, duration/60)}
                   disabled={duration==30}
                   >
                   <Text style={{textAlign: "center", fontSize: 16, color: `${duration>30? "black": "#fafafa"}`}}>-</Text>
@@ -70,10 +90,10 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
                 <Text style={{flex: 1, textAlign: "center", fontSize: 16, margin: 3}}>{duration/60}</Text>
                 <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
-                  onPress={()=> setDuration(oldDuration => oldDuration + 30)}
-                  disabled={duration==1440}
+                  onPress={()=> updateDuration(1, duration/60)}
+                  disabled={duration==2880}
                   >
-                  <Text style={{textAlign: "center", fontSize: 16, color: `${duration<1440? "black": "#fafafa"}`}}>+</Text>
+                  <Text style={{textAlign: "center", fontSize: 16, color: `${duration<2880? "black": "#fafafa"}`}}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -122,10 +142,17 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
             <TouchableOpacity
               activeOpacity={0.6}
               style={[styles.button, { backgroundColor: 'lightgreen', opacity: Number(`${screen==undefined ? 0.5 : 1}`) }]}
-              onPress={() => setWallpaper(duration, isRandom, screen!)}
-              disabled={screen==undefined}
+              onPress={handleSetWallpaper}
+              disabled={screen==undefined || isSettingWallpaper}
             >
-              <Text style={{color: `${screen==undefined ? '#fff' : '#000'}`, fontSize: 16,}}>Set Wallpaper</Text>
+              {isSettingWallpaper?
+                <>
+                <ActivityIndicator size="small" color="grey" />
+                <Text style={{color: 'grey', fontSize: 16}}>  Setting Wallpapers</Text>
+                </>
+                :
+                <Text style={{color: `${screen==undefined ? '#fff' : '#000'}`, fontSize: 16,}}>Set Wallpapers</Text>
+              }
             </TouchableOpacity>
           </View>
         </Animated.View>

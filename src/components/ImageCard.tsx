@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Pressable, StyleSheet, Text, View, Modal, Image, TouchableOpacity } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { Pressable, StyleSheet, Text, View, Modal, Image, TouchableOpacity, BackHandler, StatusBar } from 'react-native'
 
 type props = {
   url: string,
@@ -15,6 +15,23 @@ export default function ImageCard({url, removeImage}: props) {
     setIsModalVisible(false);
   };
 
+  useEffect(() => {
+      const backAction = () => {
+        if (isModalVisible) {
+          onModalClose();
+          return true;
+        }
+        return false; // Allow default back button behavior if no modals are open
+      };
+  
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        backAction
+      );
+  
+      return () => backHandler.remove(); // Cleanup the listener
+    }, [isModalVisible]);
+
   return (
     <View style={styles.app}>
       <TouchableOpacity activeOpacity={0.75} onLongPress={()=>setIsModalVisible(true)}>
@@ -22,7 +39,7 @@ export default function ImageCard({url, removeImage}: props) {
       </TouchableOpacity>
       
       {/* Modal for Image */}
-      <Modal statusBarTranslucent transparent={true} visible={isModalVisible} animationType="fade">
+      <Modal statusBarTranslucent transparent={true} visible={isModalVisible} animationType="fade" onRequestClose={onModalClose}>
         <View style={styles.modalBackground} onTouchEnd={onModalClose}>
           <View style={styles.modalContent}>
             {/* Enlarged Image */}

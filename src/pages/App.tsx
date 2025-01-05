@@ -106,10 +106,24 @@ function App(): React.JSX.Element {
     });
   }
 
-  const stopBackgroundTask = async () => {
-    await BackgroundFetch.stop();
-    await updateLocalStorage({isTaskRegistered: false});
-    ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
+  const stopBackgroundTask = () => {
+    Alert.alert("Stop Wallpapers", "Do you want to stop the wallpaper service?",
+      [
+        {
+          text: "Cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            await BackgroundFetch.stop();
+            await updateLocalStorage({previousIndex: -1, isTaskRegistered: false});
+            ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
+          },
+          style: "destructive"
+        },
+      ],
+      { cancelable: true } // Allows dismissal by tapping outside the alert on Android
+    )
   }
 
   const updateLocalStorage = async (newData: Partial<localStore>) => {
@@ -135,6 +149,23 @@ function App(): React.JSX.Element {
     });
   },[])
   
+  useEffect(() => {
+    const backAction = () => {
+      if (isWallpaperModalVisible) {
+        onWallpaperModalClose();
+        return true;
+      }
+      return false; // Allow default back button behavior if no modals are open
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove(); // Cleanup the listener
+  }, [isWallpaperModalVisible]);
+
   return (
     <SafeAreaView style={styles.app}>
       <StatusBar barStyle={'dark-content'} backgroundColor={"transparent"} />
@@ -152,7 +183,7 @@ function App(): React.JSX.Element {
               <View style={{width: "100%", height: 400}}>
                 <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
               </View>
-              <Text style={{textAlign: "center", fontSize: 16}}>Select two or more pictures to proceed 👇</Text>
+              <Text style={{textAlign: "center", fontSize: 16}}>Select some pictures to get started 👇</Text>
             </View>
           }
           
@@ -161,8 +192,8 @@ function App(): React.JSX.Element {
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
             </TouchableOpacity>
             <View style={styles.nestedButtonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={Number(localStorage?.imageArray.length)<2}>
-              <Text  style={[styles.buttonLabel, {color: `${Number(localStorage?.imageArray.length)<2?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={Number(localStorage?.imageArray.length)==0}>
+              <Text  style={[styles.buttonLabel, {color: `${Number(localStorage?.imageArray.length)==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered}>
               <Text  style={[styles.buttonLabel, {color: `${!localStorage?.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
