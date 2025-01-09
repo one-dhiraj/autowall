@@ -4,24 +4,29 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DeviceWallpaper from "react-native-device-wallpaper";
 
 export interface localStore {
+  version: number,
   imageArray: string[],
   isRandom: boolean,
   screen: string,
   isTaskRegistered: boolean,
-  previousIndex: number,
+  previousWalls: number[],
 }
 
-const findNextIndex = (tempStore: localStore): number => {
-  let newIndex = tempStore.previousIndex;
-  while(newIndex==tempStore.previousIndex){
-    let arrayLength = tempStore.imageArray.length;
-    
-    if(!tempStore.isRandom)
-      newIndex = (tempStore.previousIndex + 1) % arrayLength;
-    else
-      newIndex = Math.floor(Math.random() * arrayLength);
-  }
+const localStorageKey: string = 'localStorage';
+const localStorageVersion: number = 2;
 
+const findNextIndex = (tempStore: localStore): number => {
+  let newIndex;
+  let arrayLength = tempStore.imageArray.length;
+  
+  if(!tempStore.isRandom)
+    newIndex = (tempStore.previousWalls[tempStore.previousWalls.length - 1] + 1) % arrayLength;
+  else{
+    do {
+      newIndex = Math.floor(Math.random() * arrayLength);
+    } while (tempStore.previousWalls.includes(newIndex));
+  }
+  
   return newIndex;
 }
 
@@ -37,23 +42,23 @@ const saveFileToAppStorage = async (uri: string, fileName: string): Promise<stri
 };
 
 const applyWallpaper = async() => {
-  let tempVariable = await AsyncStorage.getItem('localStorage');
+  let tempStore:localStore = await fetchLocalStore();
 
-  if(tempVariable === null){
+  if(!tempStore.isTaskRegistered || tempStore.imageArray.length == 0){
     return;
   }else{
-    let tempStore:localStore = JSON.parse(tempVariable);
+    let nextWallIndex: number = findNextIndex(tempStore);
 
-    if(tempStore.imageArray.length != 0){
-      let nextWallIndex: number = findNextIndex(tempStore);
-
-      let setWallResult = tempStore.screen=='HOME'? await DeviceWallpaper.setWallPaper(tempStore.imageArray[nextWallIndex]):
-                            tempStore.screen=='LOCK'? await DeviceWallpaper.setLockScreen(tempStore.imageArray[nextWallIndex]):
-                            await DeviceWallpaper.setBoth(tempStore.imageArray[nextWallIndex]);
+    let setWallResult = tempStore.screen=='HOME'? await DeviceWallpaper.setWallPaper(tempStore.imageArray[nextWallIndex]):
+                        tempStore.screen=='LOCK'? await DeviceWallpaper.setLockScreen(tempStore.imageArray[nextWallIndex]):
+                        await DeviceWallpaper.setBoth(tempStore.imageArray[nextWallIndex]);
+  
+    if(tempStore.previousWalls.length == tempStore.imageArray.length)
+      tempStore = {...tempStore, previousWalls: [-1]};
+    else
+      tempStore = {...tempStore, previousWalls: [...tempStore.previousWalls, nextWallIndex]};
     
-      tempStore = {...tempStore, previousIndex: nextWallIndex};
-      await AsyncStorage.setItem('localStorage', JSON.stringify(tempStore));
-    }
+    await AsyncStorage.setItem(localStorageKey, JSON.stringify(tempStore));
   }
 }
 
@@ -72,19 +77,24 @@ const backgroundFetchHeadlessTask = async (event) => {
     BackgroundFetch.finish(event.taskId);
 }
 
-const fetchLocalStore = async () => {
-  var localSt = await AsyncStorage.getItem('localStorage');
+const fetchLocalStore = async (): Promise<localStore> => {
+  var localSt = await AsyncStorage.getItem(localStorageKey);
   if(localSt){
-    return JSON.parse(localSt);
+    let returnObj = JSON.parse(localSt);
+    if(returnObj.version !== localStorageVersion){
+      returnObj = {...returnObj, version: localStorageVersion, previousWalls: [-1]}
+    }
+    return returnObj;
   }else{
     return {
+      version: localStorageVersion,
       imageArray: [],
       isRandom: false,
       screen: "HOME",
       isTaskRegistered: false,
-      previousIndex: -1,
+      previousWalls: [-1]
     };
   }
 }
 
-export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper, fetchLocalStore};
+export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper, fetchLocalStore, localStorageKey};

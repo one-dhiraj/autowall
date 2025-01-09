@@ -21,7 +21,7 @@ import {
   Alert,
   BackHandler,
 } from 'react-native';
-import { applyWallpaper, backgroundFetchHeadlessTask, fetchLocalStore, localStore, saveFileToAppStorage } from '../components/utilFunctions';
+import { applyWallpaper, backgroundFetchHeadlessTask, fetchLocalStore, localStorageKey, localStore, saveFileToAppStorage } from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
@@ -67,7 +67,7 @@ function App(): React.JSX.Element {
       
       await updateLocalStorage({
         imageArray: tempArray,
-        previousIndex: tempArray.length>localStorage!.previousIndex ? localStorage!.previousIndex : -1,
+        previousWalls: [-1],
         isTaskRegistered: tempArray.length==0? false: localStorage!.isTaskRegistered
       })
     }catch(err){
@@ -116,7 +116,7 @@ function App(): React.JSX.Element {
           text: "Yes",
           onPress: async () => {
             await BackgroundFetch.stop();
-            await updateLocalStorage({previousIndex: -1, isTaskRegistered: false});
+            await updateLocalStorage({previousWalls: [-1], isTaskRegistered: false});
             ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
           },
           style: "destructive"
@@ -135,7 +135,7 @@ function App(): React.JSX.Element {
       setLocalStorage(updatedData);
 
       // Update AsyncStorage
-      await AsyncStorage.setItem('localStorage', JSON.stringify(updatedData));
+      await AsyncStorage.setItem(localStorageKey, JSON.stringify(updatedData));
     } catch (error) {
       console.error("Failed to update local storage:", error);
     }
