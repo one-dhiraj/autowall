@@ -52,7 +52,12 @@ function App(): React.JSX.Element {
     }
   };
   
+  const onWallpaperModalOpen = () => {
+    StatusBar.setBarStyle("light-content");
+    setIsWallpaperModalVisible(true);
+  }
   const onWallpaperModalClose = () => {
+    StatusBar.setBarStyle("dark-content");
     setIsWallpaperModalVisible(false);
   };
 
@@ -192,7 +197,7 @@ function App(): React.JSX.Element {
               <Text  style={styles.buttonLabel}>Add Pictures</Text>
             </TouchableOpacity>
             <View style={styles.nestedButtonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={()=> setIsWallpaperModalVisible(true)} disabled={Number(localStorage?.imageArray.length)==0}>
+            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={onWallpaperModalOpen} disabled={Number(localStorage?.imageArray.length)==0}>
               <Text  style={[styles.buttonLabel, {color: `${Number(localStorage?.imageArray.length)==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered}>

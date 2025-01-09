@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing, ActivityIndicator } from 'react-native';
 import { PropsWithChildren } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
+import { SelectList } from 'react-native-dropdown-select-list'
 import Icon from 'react-native-vector-icons/Ionicons';
 import OctIcons from 'react-native-vector-icons/Octicons'
 import {OpenOptimizationSettings } from "react-native-battery-optimization-check";
@@ -55,8 +56,14 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
   }
 
   const handleSetWallpaper = () => {
+    let screenVal='BOTH';
+    if(screen=='Lock Screen')
+      screenVal='LOCK';
+    else if(screen=='Home Screen')
+      screenVal='HOME';
+    
     setIsSettingWallpaper(true);
-    setWallpaper(duration, isRandom, screen!)
+    setWallpaper(duration, isRandom, screenVal);
   }
 
   useEffect(()=>{
@@ -99,23 +106,20 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
             </View>
          
             <View style={{position: "relative"}}>
-            <Dropdown
-              style={[styles.dropdown, {borderColor: `${screen==undefined ? "red" : 'gray'}`}]}
+            <SelectList
               data={[
-                {label: 'Home Screen', value: 'HOME'},
-                {label: 'Lock Screen', value: 'LOCK'},
-                {label: 'Both Screens', value: 'BOTH'}
+                {key: '2', value: 'Lock Screen'},
+                {key: '1', value: 'Home Screen'},
+                {key: '3', value: 'Both the Screens'}
               ]}
-              placeholderStyle={styles.label}
-              itemTextStyle={styles.label}
-              selectedTextStyle={styles.label}
-              itemContainerStyle={styles.itemContainer}
-              containerStyle={styles.dropContainer}
-              labelField="label"
-              valueField="value"
-              placeholder={'Select wallpaper screen'}
-              value={screen}
-              onChange={item => setScreen(item.value)}
+              setSelected={setScreen}
+              placeholder={`${screen==undefined?'Select wallpaper screen': screen}`}
+              search={false}
+              save={'value'}
+              boxStyles={{...styles.dropdown, borderColor: `${screen==undefined? "red": "grey"}`}}
+              dropdownStyles={styles.dropContainer}
+              inputStyles={{marginLeft: 5}}
+              arrowicon={<Icon name="chevron-down" size={16} style={{marginRight: 5, paddingTop: 4}}/>}
             />
             <Text style={{position: "absolute", bottom: -20, padding: 3, color: `${screen==undefined?"red": "white"}`, fontSize:12, fontWeight: 300}}>Please select a wallpaper screen</Text>
             </View>
@@ -195,17 +199,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   dropdown: {
-    height: 40,
     borderWidth: 0.5,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 8,
   },
-  itemContainer: {
-    borderRadius: 10,
-  },
   dropContainer: {
+    backgroundColor: "white",
+    position: "absolute",
+    zIndex: 1,
+    top: 40,
+    width: "100%",
     borderRadius: 10,
-    top: -32
+    borderWidth: 0.5,
   },
   button: {
     borderRadius: 10,

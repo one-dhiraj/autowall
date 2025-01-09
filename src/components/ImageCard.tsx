@@ -11,8 +11,14 @@ export default function ImageCard({url, removeImage}: props) {
   
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
+  const onModalOpen = () => {
+    setIsModalVisible(true);
+    StatusBar.setBarStyle("light-content");
+  }
+
   const onModalClose = () => {
     setIsModalVisible(false);
+    StatusBar.setBarStyle("dark-content");
   };
 
   useEffect(() => {
@@ -34,7 +40,7 @@ export default function ImageCard({url, removeImage}: props) {
 
   return (
     <View style={styles.app}>
-      <TouchableOpacity activeOpacity={0.75} onLongPress={()=>setIsModalVisible(true)}>
+      <TouchableOpacity activeOpacity={0.75} onLongPress={onModalOpen}>
         <Image source={{uri: url}} style={styles.image}/>
       </TouchableOpacity>
       
