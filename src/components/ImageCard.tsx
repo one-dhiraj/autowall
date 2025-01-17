@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Text, View, Modal, Image, TouchableOpacity, BackHandler, StatusBar } from 'react-native'
+import { useColorScheme } from 'react-native';
+import { StyleSheet, Text, View, Modal, Image, TouchableOpacity, BackHandler } from 'react-native'
 
 type props = {
   url: string,
@@ -10,15 +11,14 @@ type props = {
 export default function ImageCard({url, removeImage}: props) {
   
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const isDarkMode = useColorScheme() === 'dark';
 
   const onModalOpen = () => {
     setIsModalVisible(true);
-    StatusBar.setBarStyle("light-content");
   }
 
   const onModalClose = () => {
     setIsModalVisible(false);
-    StatusBar.setBarStyle("dark-content");
   };
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function ImageCard({url, removeImage}: props) {
       
       {/* Modal for Image */}
       <Modal statusBarTranslucent transparent={true} visible={isModalVisible} animationType="fade" onRequestClose={onModalClose}>
-        <View style={styles.modalBackground} onTouchEnd={onModalClose}>
+        <View style={[styles.modalBackground, {backgroundColor: isDarkMode? "rgba(0, 0, 0, 0.7)" : "rgba(234, 228, 228, 0.8)"}]} onTouchEnd={onModalClose}>
           <View style={styles.modalContent}>
             {/* Enlarged Image */}
             <View style={{width: "95%"}}>
@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: "rgba(75,75,75, 0.7)",
   },
   modalContent: {
     justifyContent: "center",

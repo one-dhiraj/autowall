@@ -20,12 +20,21 @@ import {
   ToastAndroid,
   Alert,
   BackHandler,
+  useColorScheme
 } from 'react-native';
-import { applyWallpaper, backgroundFetchHeadlessTask, fetchLocalStore, localStorageKey, localStore, saveFileToAppStorage } from '../components/utilFunctions';
+import {
+  applyWallpaper,
+  backgroundFetchHeadlessTask,
+  fetchLocalStore,
+  localStorageKey,
+  localStore,
+  saveFileToAppStorage
+} from '../components/utilFunctions';
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
   const [localStorage, setLocalStorage] = useState<localStore>();
+  const isDarkMode = useColorScheme() === 'dark';
   
   const pickImageAsync = async () => {
     try {
@@ -53,11 +62,13 @@ function App(): React.JSX.Element {
   };
   
   const onWallpaperModalOpen = () => {
-    StatusBar.setBarStyle("light-content");
+    if(!isDarkMode)
+      StatusBar.setBarStyle("light-content");
     setIsWallpaperModalVisible(true);
   }
   const onWallpaperModalClose = () => {
-    StatusBar.setBarStyle("dark-content");
+    if(!isDarkMode)
+      StatusBar.setBarStyle("dark-content");
     setIsWallpaperModalVisible(false);
   };
 
@@ -172,8 +183,8 @@ function App(): React.JSX.Element {
   }, [isWallpaperModalVisible]);
 
   return (
-    <SafeAreaView style={styles.app}>
-      <StatusBar barStyle={'dark-content'} backgroundColor={"transparent"} />
+    <SafeAreaView style={[styles.app, {backgroundColor: isDarkMode? "black": "white"}]}>
+      <StatusBar barStyle={isDarkMode?'light-content' : 'dark-content'} backgroundColor={isDarkMode? "black": "white"} />
         <View style={styles.appContainer}>
           {localStorage?.imageArray.length !=0 ?
             <ScrollView>
@@ -188,7 +199,7 @@ function App(): React.JSX.Element {
               <View style={{width: "100%", height: 400}}>
                 <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
               </View>
-              <Text style={{textAlign: "center", fontSize: 16}}>Select some pictures to get started 👇</Text>
+              <Text style={{textAlign: "center", fontSize: 16, color: isDarkMode? "white": "black"}}>Select some pictures to get started 👇</Text>
             </View>
           }
           
@@ -215,7 +226,6 @@ const styles = StyleSheet.create({
   app:{
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#fafafa"
   },
   appContainer:{
     flex: 1,

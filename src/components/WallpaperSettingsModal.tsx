@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, Pressable, StyleSheet, Animated, Switch, TouchableOpacity, Easing, ActivityIndicator, useColorScheme } from 'react-native';
 import { PropsWithChildren } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
 import { SelectList } from 'react-native-dropdown-select-list'
@@ -18,6 +18,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
   const [isRandom, setIsRandom] = useState<boolean>(false); // Track whether wallpapers are random or serial
   const [screen, setScreen] = useState<string>(); // Store the screen where to set wallpaper
   const [isSettingWallpaper, setIsSettingWallpaper] = useState<boolean>(false);
+  const isDarkMode = useColorScheme() === 'dark';
 
   const toggleSwitch = () => setIsRandom((prev) => !prev);
 
@@ -73,19 +74,19 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
   return (
     <Modal animationType='fade' statusBarTranslucent transparent={true} visible={isVisible} onRequestClose={handleClose}>
       <View style={styles.modalBackground} onTouchEnd={handleClose}>
-        <Animated.View style={[styles.modalContent, {transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
+        <Animated.View style={[styles.modalContent, {backgroundColor: isDarkMode? "black": "white", transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
           {/* Title and Close Button */}
           <View style={[styles.container, {marginBottom: 10}]}>
-            <Text style={styles.title}>Customize Behavior</Text>
+            <Text style={[styles.title, {color: isDarkMode? "white": "black"}]}>Customize Behavior</Text>
             <Pressable onPress={handleClose}>
-              <Icon name="close" size={20} />
+              <Icon name="close" size={20} color={isDarkMode? "white": "black"} />
             </Pressable>
           </View>
 
           <View style={styles.bodyContainer}>
             {/* Duration Input */}
             <View style={styles.container}>
-              <Text style={styles.label}>Duration (in hours)</Text>
+              <Text style={[styles.label, {color: isDarkMode? "white": "black"}]}>Duration (in hours)</Text>
               <View style={{flexDirection: "row", flex: 2/3,}}>
                 <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
@@ -94,7 +95,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
                   >
                   <Text style={{textAlign: "center", fontSize: 16, color: `${duration>30? "black": "#fafafa"}`}}>-</Text>
                 </TouchableOpacity>
-                <Text style={{flex: 1, textAlign: "center", fontSize: 16, margin: 3}}>{duration/60}</Text>
+                <Text style={{flex: 1, textAlign: "center", fontSize: 16, margin: 3, color: isDarkMode? "white": "black"}}>{duration/60}</Text>
                 <TouchableOpacity
                   style={{flex: 1, backgroundColor: "#c0f1f1", borderRadius: 5, justifyContent: "center"}}
                   onPress={()=> updateDuration(1, duration/60)}
@@ -117,16 +118,17 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
               search={false}
               save={'value'}
               boxStyles={{...styles.dropdown, borderColor: `${screen==undefined? "red": "grey"}`}}
-              dropdownStyles={styles.dropContainer}
-              inputStyles={{marginLeft: 5}}
-              arrowicon={<Icon name="chevron-down" size={16} style={{marginRight: 5, paddingTop: 4}}/>}
+              dropdownStyles={{...styles.dropContainer, backgroundColor: isDarkMode? "#111": "white"}}
+              inputStyles={{marginLeft: 5, color: isDarkMode? "white": "black"}}
+              dropdownTextStyles={{color: isDarkMode? "white": "black"}}
+              arrowicon={<Icon name="chevron-down" size={16} color={isDarkMode? "white": "black"} style={{marginRight: 5, paddingTop: 4}}/>}
             />
-            <Text style={{position: "absolute", bottom: -20, padding: 3, color: `${screen==undefined?"red": "white"}`, fontSize:12, fontWeight: 300}}>Please select a wallpaper screen</Text>
+            <Text style={{position: "absolute", bottom: -20, padding: 3, color: `${screen==undefined?"red": isDarkMode? "black": "white"}`, fontSize:12, fontWeight: 300}}>Please select a wallpaper screen</Text>
             </View>
 
             {/* Random/Serial Switch */}
             <View style={styles.container}>
-              <Text style={styles.label}>Shuffle between Wallpapers</Text>
+              <Text style={[styles.label, {color: isDarkMode? "white": "black"}]}>Shuffle between Wallpapers</Text>
               <Switch
                 value={isRandom}
                 onValueChange={toggleSwitch}
@@ -136,9 +138,9 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
             </View>
 
             <View style={styles.container}>
-            <Text style={{fontSize: 14, textAlign: "justify", color: "rgb(77, 78, 79)"}}>Disable Battery Optimizations{`\n`}for reliable wallpaper transitions</Text>
+            <Text style={{fontSize: 14, textAlign: "justify", color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}}>Disable Battery Optimizations{`\n`}for reliable wallpaper transitions</Text>
             <Pressable onPress={OpenOptimizationSettings}>
-                <OctIcons style={{marginRight: 15}} name="link-external" size={20} color="rgb(77, 78, 79)"/>
+                <OctIcons style={{marginRight: 15}} name="link-external" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
             </Pressable>
             </View>
 
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     alignItems: "center",
-    backgroundColor: "rgba(75,75,75, 0.7)",
+    backgroundColor: "rgba(60, 60, 60, 0.7)",
   },
   modalContent: {
     height: 350,
