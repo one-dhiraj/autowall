@@ -1,17 +1,12 @@
-import NoImage from '../assets/images/no-image.png'
-import ImageCard from '../components/ImageCard'
 import WallpaperSettings from '../components/WallpaperSettingsModal'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DocumentPicker, {types} from 'react-native-document-picker';
-import RNFS from 'react-native-fs';
 import BackgroundFetch from "react-native-background-fetch";
 import BootSplash from "react-native-bootsplash";
+import IonIcon from 'react-native-vector-icons/Ionicons'
 
 import React, { useEffect, useState } from 'react';
 import {
-  Image,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -20,77 +15,55 @@ import {
   ToastAndroid,
   Alert,
   BackHandler,
-  useColorScheme
+  useColorScheme,
 } from 'react-native';
 import {
   applyWallpaper,
   backgroundFetchHeadlessTask,
   fetchLocalStore,
+  GlobalStateContext,
   localStorageKey,
   localStore,
-  saveFileToAppStorage
 } from '../components/utilFunctions';
+import AllAlbums from './AllAlbums';
+import Settings from '../components/SettingsModal';
 
 function App(): React.JSX.Element {
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
   const [localStorage, setLocalStorage] = useState<localStore>();
   const isDarkMode = useColorScheme() === 'dark';
-  
-  const pickImageAsync = async () => {
-    try {
-      let tempArray: string[] = localStorage!.imageArray;
-    
-      const results = await DocumentPicker.pick({
-        type: [types.images],
-        allowMultiSelection: true,
-      });
 
-      await Promise.all(
-        results.map(async (file) => {
-          const savedPath = await saveFileToAppStorage(file.uri, file.name!);
-          tempArray.push(`file://${savedPath}`);
-        })
-      );
-      
-      await updateLocalStorage({imageArray: tempArray});
-    } catch (err: any) {
-      if (DocumentPicker.isCancel(err)) {
-      } else {
-        Alert.alert("Error", "Something went wrong please try again!");
-      }
-    }
-  };
+  const [navOption, setNavOption] = useState(1);
   
   const onWallpaperModalOpen = () => {
-    if(!isDarkMode)
-      StatusBar.setBarStyle("light-content");
     setIsWallpaperModalVisible(true);
   }
   const onWallpaperModalClose = () => {
-    if(!isDarkMode)
-      StatusBar.setBarStyle("dark-content");
     setIsWallpaperModalVisible(false);
   };
 
-  const removeImage = async (urlToRemove: string) =>{
-    try{
-      await RNFS.unlink(urlToRemove.substring(7));
-      let tempArray: string[] = localStorage!.imageArray.filter(uri => uri != urlToRemove);
-      
-      if(tempArray.length==0){
-        await BackgroundFetch.stop();
-      }
-      
-      await updateLocalStorage({
-        imageArray: tempArray,
-        previousWalls: [-1],
-        isTaskRegistered: tempArray.length==0? false: localStorage!.isTaskRegistered
-      })
-    }catch(err){
-      console.error("Error occured while file deletion: ", err);
-    }
+  const onSettingsModalOpen = () => {
+    setIsSettingsModalVisible(true);
+  }
+  const onSettingsModalClose = () => {
+    setIsSettingsModalVisible(false);
   };
-  
+
+  const handleBottomNav = (index: number)=>{
+    if(index==1){
+      onWallpaperModalClose();
+      onSettingsModalClose();
+    }else if(index==2){
+      onSettingsModalClose();
+      onWallpaperModalOpen();
+    }else if(index==3){
+      onWallpaperModalClose();
+      onSettingsModalOpen();
+    }
+    setNavOption(index);
+  }
+
   const setWallpaper = async (duration: number, isRandom: boolean, screen: string) => {
    if(screen!=null)
       try {
@@ -167,8 +140,8 @@ function App(): React.JSX.Element {
   
   useEffect(() => {
     const backAction = () => {
-      if (isWallpaperModalVisible) {
-        onWallpaperModalClose();
+      if (isWallpaperModalVisible || isSettingsModalVisible) {
+        handleBottomNav(1);
         return true;
       }
       return false; // Allow default back button behavior if no modals are open
@@ -180,45 +153,36 @@ function App(): React.JSX.Element {
     );
 
     return () => backHandler.remove(); // Cleanup the listener
-  }, [isWallpaperModalVisible]);
+  }, [isWallpaperModalVisible, isSettingsModalVisible]);
 
   return (
+    <GlobalStateContext.Provider value={{localStorage, updateLocalStorage, isDarkMode}}>
     <SafeAreaView style={[styles.app, {backgroundColor: isDarkMode? "black": "white"}]}>
       <StatusBar barStyle={isDarkMode?'light-content' : 'dark-content'} backgroundColor={isDarkMode? "black": "white"} />
         <View style={styles.appContainer}>
-          {localStorage?.imageArray.length !=0 ?
-            <ScrollView>
-              <View style={styles.imageCard}>
-                {localStorage?.imageArray.map((url, index) =>
-                  <ImageCard key={index} url={url} removeImage={removeImage} />
-                )}
-              </View>
-            </ScrollView>
-          :
-            <View style={styles.noImageContainer}>
-              <View style={{width: "100%", height: 400}}>
-                <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
-              </View>
-              <Text style={{textAlign: "center", fontSize: 16, color: isDarkMode? "white": "black"}}>Select some pictures to get started 👇</Text>
-            </View>
-          }
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "lightgreen"}]} onPress={pickImageAsync}>
-              <Text  style={styles.buttonLabel}>Add Pictures</Text>
-            </TouchableOpacity>
-            <View style={styles.nestedButtonContainer}>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={onWallpaperModalOpen} disabled={Number(localStorage?.imageArray.length)==0}>
-              <Text  style={[styles.buttonLabel, {color: `${Number(localStorage?.imageArray.length)==0?"#fafafa":"black"}`}]}>Set Wallpaper</Text>
-            </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.6} style={[styles.button, {backgroundColor: "#c0f1f1", flex: 1/2}]} onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered}>
-              <Text  style={[styles.buttonLabel, {color: `${!localStorage?.isTaskRegistered?"#fafafa":"black"}`}]}>Stop Wallpapers</Text>
-            </TouchableOpacity>
-            </View>
+
+          <View style={{flex: 1, alignItems: "center"}}>
+            <AllAlbums />
           </View>
+
+          <View style={[styles.bottomNavBar, {backgroundColor: isDarkMode? "black": "white"}]}>
+            <TouchableOpacity activeOpacity={0.5} onPressOut={()=> handleBottomNav(1)}>
+              <Text style={{textAlign:"center", fontWeight: navOption==1?"500":"400", letterSpacing: 0.3, color: navOption==1? isDarkMode? "white": "black" : "grey", borderBottomColor: navOption==1? isDarkMode? "white": "black": isDarkMode? "black": "white", borderBottomWidth: 2}}>Albums</Text>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.5} onPressOut={()=> handleBottomNav(2)}>
+              <Text style={{textAlign:"center", fontWeight: navOption==2?"500":"400", letterSpacing: 0.3, color: navOption==2? isDarkMode? "white": "black" : "grey", borderBottomColor: navOption==2? isDarkMode? "white": "black": isDarkMode? "black": "white", borderBottomWidth: 2}}>Simple</Text>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.5} onPressOut={()=> handleBottomNav(3)}>
+              <IonIcon  name={navOption==3?'menu':"menu-outline"} size={30} color={navOption==3? isDarkMode? "white": "black" : "grey"}/>
+            </TouchableOpacity>
+          </View>
+          
+          {(isWallpaperModalVisible || isSettingsModalVisible) && <View onTouchEnd={()=>handleBottomNav(1)} style={{backgroundColor: isDarkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)", width: "100%", height: "100%", position: "absolute"}}></View>}
+          <WallpaperSettings isVisible={isWallpaperModalVisible} onClose={onWallpaperModalClose} setWallpaper={setWallpaper}/>
+          <Settings isVisible={isSettingsModalVisible} onClose={onSettingsModalClose}/>
         </View>
-        <WallpaperSettings isVisible={isWallpaperModalVisible} onClose={onWallpaperModalClose} setWallpaper={setWallpaper}/>
     </SafeAreaView>
+    </GlobalStateContext.Provider>
   )
 }
 
@@ -229,49 +193,16 @@ const styles = StyleSheet.create({
   },
   appContainer:{
     flex: 1,
-    justifyContent: "center",
-    width: "90%",
-    paddingTop: 20,
-    paddingBottom: 10,
-    gap: 10,
+    width: "100%",
   },
-  text:{
-    textAlign: "center"
-  },
-
-  imageCard:{
-    flex:1,
+  bottomNavBar: {
     flexDirection: "row",
-    flexWrap: 'wrap',
-    columnGap: "2%",
-    rowGap: 5,
-  },
-
-  noImageContainer:{
-    flex: 1,
-    justifyContent: "center",
-  },
-
-  buttonContainer: {
-    gap: 5,
-  },
-  nestedButtonContainer: {
-    flexDirection: "row",
-    gap: 5
-  },
-  
-  button: {
-    borderRadius: 10,
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 5,
     height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    
-  },
-  buttonLabel: {
-    color: '#000',
-    fontSize: 16,
-  },
+    zIndex: 1
+  }
 })
 
 export default App;
