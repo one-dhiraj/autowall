@@ -2,18 +2,25 @@ import RNFS from 'react-native-fs';
 import BackgroundFetch from "react-native-background-fetch";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DeviceWallpaper from "react-native-device-wallpaper";
+import { createContext, useContext } from 'react';
 
 export interface localStore {
   version: number,
-  imageArray: string[],
+  imageArray: string[][],
   isRandom: boolean,
   screen: string,
   isTaskRegistered: boolean,
   previousWalls: number[],
 }
 
+interface GlobalState {
+  localStorage: localStore | undefined;
+  updateLocalStorage: (newData: Partial<localStore>) => Promise<void>;
+  isDarkMode: boolean
+}
+
 const localStorageKey: string = 'localStorage';
-const localStorageVersion: number = 2;
+const localStorageVersion: number = 3;
 
 const findNextIndex = (tempStore: localStore): number => {
   let newIndex;
@@ -77,24 +84,60 @@ const backgroundFetchHeadlessTask = async (event) => {
     BackgroundFetch.finish(event.taskId);
 }
 
+function updateLocalStore(currentObj: Partial<localStore>): localStore {
+  const updateImageArray = (imageArray: any): string[][] => {
+    
+    // Check if it's a 2D array already
+    if (Array.isArray(imageArray)) {
+      if (Array.isArray(imageArray[0])) {
+        return imageArray; // Already a 2D array, return as-is
+      } else if(imageArray.length !== 0) {
+        return [['Album 1', ...imageArray]]; // Convert non empty 1D array to 2D
+      }
+    }
+    return []; // Default to empty 2D array if invalid or empty 1D array
+  };
+
+  return {
+    version: localStorageVersion,
+    imageArray: updateImageArray(currentObj.imageArray),
+    isRandom: currentObj.isRandom ?? false,
+    screen: currentObj.screen ?? "HOME",
+    isTaskRegistered: currentObj.isTaskRegistered ?? false,
+    previousWalls: currentObj.previousWalls ?? [-1],
+  };
+}
+
 const fetchLocalStore = async (): Promise<localStore> => {
   var localSt = await AsyncStorage.getItem(localStorageKey);
   if(localSt){
     let returnObj = JSON.parse(localSt);
     if(returnObj.version !== localStorageVersion){
-      returnObj = {...returnObj, version: localStorageVersion, previousWalls: [-1]}
+      returnObj = updateLocalStore(returnObj);
     }
     return returnObj;
-  }else{
-    return {
-      version: localStorageVersion,
-      imageArray: [],
-      isRandom: false,
-      screen: "HOME",
-      isTaskRegistered: false,
-      previousWalls: [-1]
-    };
   }
+
+  // If no data exists in storage, return the default structure
+  return updateLocalStore({});
 }
 
-export {saveFileToAppStorage, backgroundFetchHeadlessTask, applyWallpaper, fetchLocalStore, localStorageKey};
+const GlobalStateContext = createContext<GlobalState | null>(null);
+
+const useGlobalState = () => {
+  const context = useContext(GlobalStateContext);
+  if (!context) {
+    throw new Error("useGlobalState must be used within a GlobalStateProvider");
+  }
+  return context;
+};
+
+export {
+  saveFileToAppStorage,
+  backgroundFetchHeadlessTask,
+  applyWallpaper,
+  fetchLocalStore,
+  localStorageKey,
+  GlobalStateContext,
+  useGlobalState
+};
