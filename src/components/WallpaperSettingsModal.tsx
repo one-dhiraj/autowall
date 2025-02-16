@@ -17,23 +17,24 @@ import { useGlobalState } from './utilFunctions';
 type Props = PropsWithChildren<{
   isVisible: boolean;
   onClose: () => void;
-  setWallpaper: (duration: number, isRandom: boolean, screen: string) => void;
+  setWallpaper: (duration: number, isRandom: boolean, screen: string, album: number) => void;
 }>;
 
 export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: Props) {
   const [duration, setDuration] = useState<number>(30); // Store duration in minutes
   const [isRandom, setIsRandom] = useState<boolean>(false); // Track whether wallpapers are random or serial
   const [screen, setScreen] = useState<string>(); // Store the screen where to set wallpaper
+  const [album, setAlbum] = useState<string>(); // Store the album to set wallpaper from
   const [isSettingWallpaper, setIsSettingWallpaper] = useState<boolean>(false);
-  const { isDarkMode } = useGlobalState();
+  const { isDarkMode, localStorage } = useGlobalState();
 
   const toggleSwitch = () => setIsRandom((prev) => !prev);
-  const slideAnim = useRef(new Animated.Value(400)).current; // Initially off-screen
+  const slideAnim = useRef(new Animated.Value(450)).current; // Initially off-screen
 
   // Animate modal out when it closes
   const handleClose = () => {
     Animated.timing(slideAnim, {
-      toValue: 400, // Slide out of the view
+      toValue: 450, // Slide out of the view
       duration: 200,
       easing: Easing.ease,
       useNativeDriver: false,
@@ -58,9 +59,15 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
       screenVal='LOCK';
     else if(screen=='Home Screen')
       screenVal='HOME';
+
+    let albumIndex = -1;
+    localStorage?.imageArray.forEach((arr, index)=> {
+      if(arr[0]==album)
+        albumIndex=index;
+    })
     
     setIsSettingWallpaper(true);
-    setWallpaper(duration, isRandom, screenVal);
+    setWallpaper(duration, isRandom, screenVal, albumIndex);
   }
 
   useEffect(()=>{
@@ -81,14 +88,32 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
   return (
     <Animated.View style={[styles.modalContent, {backgroundColor: isDarkMode? "#111": "white", borderColor: isDarkMode? "grey": "lightgrey", shadowColor: isDarkMode? "white": "black", transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
       {/* Title and Close Button */}
-      <View style={[styles.container, {marginBottom: 25}]}>
+      <View style={[styles.container, {marginBottom: 20}]}>
         <Text style={[styles.title, {color: isDarkMode? "white": "black"}]}>Customize Wallpaper Behavior</Text>
         {/* <Pressable onPress={handleClose}>
           <Icon name="close" size={20} color={isDarkMode? "white": "black"} />
-        </Pressable> */}
+          </Pressable> */}
       </View>
 
       <View style={styles.bodyContainer}>
+        <View style={{position: "relative"}}>
+        <Text style={{position: "absolute", top: -20, padding: 2, color: `${album==undefined?"red": isDarkMode? "#111": "white"}`, fontSize:12, fontWeight: 300}}>Please select an album</Text>
+          <SelectList
+            data={localStorage?.imageArray.map((item, index) => ({
+              key: index,
+              value: item[0]
+            }))}
+            setSelected={setAlbum}
+            placeholder={`${album==undefined?'Select album to use': album}`}
+            search={false}
+            save={'value'}
+            boxStyles={{...styles.dropdown, borderColor: `${album==undefined? "red": "grey"}`}}
+            dropdownStyles={{...styles.dropContainer, backgroundColor: isDarkMode? "#111": "white"}}
+            inputStyles={{marginLeft: 5, color: isDarkMode? "white": "black"}}
+            dropdownTextStyles={{color: isDarkMode? "white": "black"}}
+            arrowicon={<Icon name="chevron-down" size={16} color={isDarkMode? "white": "black"} style={{marginRight: 5, paddingTop: 4}}/>}
+          />
+         </View>
         <View style={{position: "relative"}}>
         <Text style={{position: "absolute", top: -20, padding: 2, color: `${screen==undefined?"red": isDarkMode? "#111": "white"}`, fontSize:12, fontWeight: 300}}>Please select a wallpaper screen</Text>
         <SelectList
@@ -108,6 +133,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
           arrowicon={<Icon name="chevron-down" size={16} color={isDarkMode? "white": "black"} style={{marginRight: 5, paddingTop: 4}}/>}
         />
         </View>
+
 
         {/* Duration Input */}
         <View style={styles.container}>
@@ -166,7 +192,7 @@ export default function WallpaperSettings({ isVisible, onClose, setWallpaper }: 
 
 const styles = StyleSheet.create({
   modalContent: {
-    height: 275,
+    height: 350,
     width: "95%",
     maxWidth: 500,
     borderRadius: 20,
@@ -195,6 +221,7 @@ const styles = StyleSheet.create({
     marginLeft: 5
   },
   dropdown: {
+    width: "100%",
     borderWidth: 0.5,
     borderRadius: 10,
     paddingHorizontal: 8,
