@@ -6,6 +6,7 @@ import {
   Animated,
   TouchableOpacity,
   Easing,
+  Linking,
 } from 'react-native';
 import { PropsWithChildren } from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -20,7 +21,7 @@ type Props = PropsWithChildren<{
 export default function Settings({ isVisible, onClose }: Props) {
   const slideAnim = useRef(new Animated.Value(400)).current; // Initially off-screen
   const [isBatteryOptEnabled, setIsBatteryOptEnabled] = useState<boolean>(true);
-  const { isDarkMode } = useGlobalState();
+  const { localStorage, isDarkMode, setIsDarkMode, stopBackgroundTask } = useGlobalState();
 
   const handleClose = () => {
     Animated.timing(slideAnim, {
@@ -54,21 +55,25 @@ export default function Settings({ isVisible, onClose }: Props) {
   return (
     <Animated.View style={[styles.modalContent, {backgroundColor: isDarkMode? "#111": "white", borderColor: isDarkMode? "grey": "lightgrey", shadowColor: isDarkMode? "white": "black", transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
       <View style={styles.optionContainer}>
-        <TouchableOpacity style={styles.option}>
-          <MaterialCommunityIcons name="layers-off-outline" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
-          <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>Stop Wallpapers</Text>
+        <TouchableOpacity onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered} style={styles.option}>
+          <MaterialCommunityIcons name="layers-off-outline" size={20} color={isDarkMode ? localStorage?.isTaskRegistered ? "#ddd": "grey": localStorage?.isTaskRegistered ? "rgb(77, 78, 79)" : "lightgrey"}/>
+          <Text style={[styles.optionText, {color: isDarkMode ? localStorage?.isTaskRegistered ? "#ddd": "grey": localStorage?.isTaskRegistered ? "rgb(77, 78, 79)" : "lightgrey"}]}>Stop Wallpapers</Text>
         </TouchableOpacity>  
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity style={styles.option} onPress={()=> setIsDarkMode(currentMode=> !currentMode)}>
           <MaterialCommunityIcons name="theme-light-dark" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
           <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>Change{`\n`}app theme</Text>
         </TouchableOpacity>  
-        <TouchableOpacity style={styles.option}>
+        {/* <TouchableOpacity style={styles.option} onPress={()=> Linking.openURL('https://paypal.com')}>
           <MaterialCommunityIcons name="wallet" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
           <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>Support{`\n`}my work</Text>
+        </TouchableOpacity>   */}
+        <TouchableOpacity style={styles.option} onPress={()=> Linking.openURL('https://onedhiraj.vercel.app/autowall-privacy-policy')}>
+          <MaterialCommunityIcons name="shield-account-variant-outline" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
+          <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>Privacy Policy</Text>
         </TouchableOpacity>  
-        <TouchableOpacity style={styles.option}>
+        <TouchableOpacity style={styles.option}  onPress={()=> Linking.openURL('https://onedhiraj.vercel.app')}>
           <MaterialCommunityIcons name="information-outline" size={20} color={isDarkMode? "#ddd":"rgb(77, 78, 79)"}/>
-          <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>About{`\n`}the app</Text>
+          <Text style={[styles.optionText, {color: isDarkMode? "#ddd": "rgb(77, 78, 79)"}]}>About the{`\n`}developer</Text>
         </TouchableOpacity>  
       </View>
 
