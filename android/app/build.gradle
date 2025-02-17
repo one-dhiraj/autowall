@@ -112,6 +112,18 @@ android {
     }
 }
 
+// Rename APK output files
+android.applicationVariants.all { variant ->
+    if (variant.buildType.name == "release") {
+            variant.outputs.all { output ->
+                def version = rootProject.ext.versionName
+                if (output.outputFileName?.endsWith(".apk")) {
+                    output.outputFileName = "app-release-${version}.apk"
+                }
+            }
+    }
+}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
