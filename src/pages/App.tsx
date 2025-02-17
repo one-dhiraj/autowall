@@ -13,9 +13,9 @@ import {
   TouchableOpacity,
   View,
   ToastAndroid,
-  Alert,
   BackHandler,
   useColorScheme,
+  Dimensions,
 } from 'react-native';
 import {
   applyWallpaper,
@@ -27,12 +27,17 @@ import {
 } from '../components/utilFunctions';
 import AllAlbums from './AllAlbums';
 import Settings from '../components/SettingsModal';
+import { Alert } from 'react-native';
 
 function App(): React.JSX.Element {
+  const { width } = Dimensions.get("window");
+
   const [isWallpaperModalVisible, setIsWallpaperModalVisible] = useState<boolean>(false);
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
   const [localStorage, setLocalStorage] = useState<localStore>();
-  const isDarkMode = useColorScheme() === 'dark';
+  const userSystemTheme = useColorScheme();
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(userSystemTheme==='dark');
+  const isTablet = width >= 768;
 
   const [navOption, setNavOption] = useState(1);
   
@@ -56,7 +61,12 @@ function App(): React.JSX.Element {
       onSettingsModalClose();
     }else if(index==2){
       onSettingsModalClose();
-      onWallpaperModalOpen();
+      if(localStorage?.imageArray != undefined && localStorage.imageArray.length > 0)
+        onWallpaperModalOpen();
+      else{
+        ToastAndroid.show('Kindly create an album first', ToastAndroid.LONG);
+        return;
+      }
     }else if(index==3){
       onWallpaperModalClose();
       onSettingsModalOpen();
@@ -64,14 +74,14 @@ function App(): React.JSX.Element {
     setNavOption(index);
   }
 
-  const setWallpaper = async (duration: number, isRandom: boolean, screen: string) => {
-   if(screen!=null)
+  const setWallpaper = async (duration: number, isRandom: boolean, screen: string, album: number) => {
+   if(screen!=null && album!=null)
       try {
         await initBackgroundFetch(duration);
-        await updateLocalStorage({isRandom: isRandom, screen: screen, isTaskRegistered: true});
+        await updateLocalStorage({isRandom: isRandom, screen: screen, isTaskRegistered: true, album: album});
         await applyWallpaper();
         await updateLocalStorage({});
-        onWallpaperModalClose();
+        handleBottomNav(1);
         ToastAndroid.show('Wallpapers configured successfully!', ToastAndroid.SHORT);
       } catch (error) {
         console.error('Failed to set wallpapers:', error);
@@ -95,24 +105,10 @@ function App(): React.JSX.Element {
     });
   }
 
-  const stopBackgroundTask = () => {
-    Alert.alert("Stop Wallpapers", "Do you want to stop the wallpaper service?",
-      [
-        {
-          text: "Cancel",
-        },
-        {
-          text: "Yes",
-          onPress: async () => {
-            await BackgroundFetch.stop();
-            await updateLocalStorage({previousWalls: [-1], isTaskRegistered: false});
-            ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
-          },
-          style: "destructive"
-        },
-      ],
-      { cancelable: true } // Allows dismissal by tapping outside the alert on Android
-    )
+  const stopBackgroundTask = async () => {
+    await BackgroundFetch.stop();
+    await updateLocalStorage({previousWalls: [0], isTaskRegistered: false});
+    ToastAndroid.show('Wallpaper service has been stopped', ToastAndroid.SHORT);
   }
 
   const updateLocalStorage = async (newData: Partial<localStore>) => {
@@ -155,8 +151,12 @@ function App(): React.JSX.Element {
     return () => backHandler.remove(); // Cleanup the listener
   }, [isWallpaperModalVisible, isSettingsModalVisible]);
 
+  useEffect(()=>{
+    setIsDarkMode(userSystemTheme==='dark');
+  }, [userSystemTheme])
+
   return (
-    <GlobalStateContext.Provider value={{localStorage, updateLocalStorage, isDarkMode}}>
+    <GlobalStateContext.Provider value={{localStorage, updateLocalStorage, isDarkMode, setIsDarkMode, isTablet, stopBackgroundTask}}>
     <SafeAreaView style={[styles.app, {backgroundColor: isDarkMode? "black": "white"}]}>
       <StatusBar barStyle={isDarkMode?'light-content' : 'dark-content'} backgroundColor={isDarkMode? "black": "white"} />
         <View style={styles.appContainer}>

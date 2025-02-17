@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Easing,
   Linking,
+  Alert,
 } from 'react-native';
 import { PropsWithChildren } from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -34,6 +35,22 @@ export default function Settings({ isVisible, onClose }: Props) {
     });
   };
 
+  const stopWallpapers = ()=>{
+    Alert.alert("Stop Wallpapers", "Do you want to stop the wallpaper service?",
+      [
+        {
+          text: "Cancel",
+        },
+        {
+          text: "Yes",
+          onPress: stopBackgroundTask,
+          style: "destructive"
+        },
+      ],
+      { cancelable: true } // Allows dismissal by tapping outside the alert on Android
+    )
+  }
+
   useEffect(()=>{
     if (isVisible) {
       Animated.timing(slideAnim, {
@@ -55,7 +72,7 @@ export default function Settings({ isVisible, onClose }: Props) {
   return (
     <Animated.View style={[styles.modalContent, {backgroundColor: isDarkMode? "#111": "white", borderColor: isDarkMode? "grey": "lightgrey", shadowColor: isDarkMode? "white": "black", transform: [{ translateY: slideAnim }] }]} onTouchEnd={(e)=> e.stopPropagation()}>
       <View style={styles.optionContainer}>
-        <TouchableOpacity onPress={stopBackgroundTask} disabled={!localStorage?.isTaskRegistered} style={styles.option}>
+        <TouchableOpacity onPress={stopWallpapers} disabled={!localStorage?.isTaskRegistered} style={styles.option}>
           <MaterialCommunityIcons name="layers-off-outline" size={20} color={isDarkMode ? localStorage?.isTaskRegistered ? "#ddd": "grey": localStorage?.isTaskRegistered ? "rgb(77, 78, 79)" : "lightgrey"}/>
           <Text style={[styles.optionText, {color: isDarkMode ? localStorage?.isTaskRegistered ? "#ddd": "grey": localStorage?.isTaskRegistered ? "rgb(77, 78, 79)" : "lightgrey"}]}>Stop Wallpapers</Text>
         </TouchableOpacity>  
