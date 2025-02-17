@@ -20,7 +20,7 @@ type Props = PropsWithChildren<{
 }>;
 
 export default function OneAlbum({albumIndex, pickImages, setShowAlbum}: Props) {
-  const {localStorage, updateLocalStorage, isDarkMode} = useGlobalState();
+  const {localStorage, updateLocalStorage, isDarkMode, stopBackgroundTask} = useGlobalState();
   
   const addNewImages = async ()=>{
     const tempArray = localStorage?.imageArray;
@@ -52,18 +52,42 @@ export default function OneAlbum({albumIndex, pickImages, setShowAlbum}: Props) 
         const userConfirmed = await showConfirmation();
         if (userConfirmed) {
           tempArray = tempArray.filter((_, index) => index !== albumIndex);
+          if(localStorage?.isTaskRegistered && albumIndex == localStorage?.album)
+            await stopBackgroundTask();
           setShowAlbum(-1);
         }
       }
       await updateLocalStorage({
         imageArray: tempArray,
-        previousWalls: [-1],
-        // isTaskRegistered: tempArray.length==0? false: localStorage!.isTaskRegistered
+        previousWalls: [0],
       })
+
     }catch(err){
       console.error("Error occured while file deletion: ", err);
     }
   };
+
+  const removeAlbum = async ()=>{
+    Alert.alert("Delete Album?", "Are you sure you want to delete this entire album? This action won't be reversible!",
+      [
+        {
+          text: "Cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            let tempArray = localStorage?.imageArray.filter((_, index)=> index!=albumIndex)
+            if(localStorage?.isTaskRegistered && albumIndex == localStorage?.album)
+              await stopBackgroundTask();
+            await updateLocalStorage({imageArray: tempArray});
+            setShowAlbum(-1);
+          },
+          style: "destructive"
+        },
+      ],
+      { cancelable: true } // Allows dismissal by tapping outside the alert on Android
+    )
+  }
 
   return (
     <View style={{flex: 1}}>
@@ -72,10 +96,10 @@ export default function OneAlbum({albumIndex, pickImages, setShowAlbum}: Props) 
         <TouchableOpacity onPress={addNewImages}>
           <AntDesign name="plus" size={24} color={isDarkMode?'white':"black"}/>
         </TouchableOpacity>
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <AntDesign name="edit" size={24} color={isDarkMode?'white':"black"}/>
-        </TouchableOpacity>
-        <TouchableOpacity>
+        </TouchableOpacity> */}
+        <TouchableOpacity onPress={removeAlbum}>
           <SimpleLineIcons name="trash" size={24} color={isDarkMode?'white':"black"}/>
         </TouchableOpacity>
       </View>
