@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { useColorScheme } from 'react-native';
 import {
   StyleSheet,
   View,
@@ -9,6 +8,7 @@ import {
   BackHandler
 } from 'react-native'
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons"
+import { useGlobalState } from './utilFunctions';
 
 type props = {
   url: string,
@@ -17,7 +17,7 @@ type props = {
 
 export default function ImageCard({url, removeImage}: props) { 
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const isDarkMode = useColorScheme() === 'dark';
+  const { isDarkMode } = useGlobalState();
 
   const onModalOpen = () => {
     setIsModalVisible(true);

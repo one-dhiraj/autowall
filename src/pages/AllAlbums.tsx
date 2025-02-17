@@ -136,10 +136,10 @@ export default function AllAlbums() {
           <View style={{width: "100%", height: 400}}>
             <Image source={NoImage} style={{width: "100%", height: "100%", resizeMode: "contain"}}/>
           </View>
-          <Text style={{textAlign: "center", fontSize: 16, color: isDarkMode? "white": "black"}}>Select some pictures to get started 👇</Text>
-          <TouchableOpacity onPress={()=> setNewAlbumInput(true)}>
-                <AntDesign name="plus" size={24} color={isDarkMode?'white':"black"}/>
-              </TouchableOpacity>
+          <TouchableOpacity style={{flexDirection: "row", justifyContent: "center", alignItems: "flex-end", width: "99%", gap: 10}} onPress={()=> setNewAlbumInput(true)}>
+          <Text style={{textAlign: "center", fontSize: 16, color: isDarkMode? "white": "black"}}>Create an album to get started</Text>
+            <AntDesign name="plus" size={24} color={isDarkMode?'white':"black"}/>
+          </TouchableOpacity>
         </View>
       }
 
