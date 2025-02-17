@@ -5,18 +5,22 @@ import DeviceWallpaper from "react-native-device-wallpaper";
 import { createContext, useContext } from 'react';
 
 export interface localStore {
-  version: number,
-  imageArray: string[][],
-  isRandom: boolean,
-  screen: string,
-  isTaskRegistered: boolean,
-  previousWalls: number[],
+  version: number;
+  imageArray: string[][];
+  album: number;
+  isRandom: boolean;
+  screen: string;
+  isTaskRegistered: boolean;
+  previousWalls: number[];
 }
 
 interface GlobalState {
   localStorage: localStore | undefined;
   updateLocalStorage: (newData: Partial<localStore>) => Promise<void>;
-  isDarkMode: boolean
+  isDarkMode: boolean;
+  setIsDarkMode: (value: React.SetStateAction<boolean>) => void;
+  isTablet: boolean;
+  stopBackgroundTask: () => Promise<void>;
 }
 
 const localStorageKey: string = 'localStorage';
@@ -24,7 +28,7 @@ const localStorageVersion: number = 3;
 
 const findNextIndex = (tempStore: localStore): number => {
   let newIndex;
-  let arrayLength = tempStore.imageArray.length;
+  let arrayLength = tempStore.imageArray[tempStore.album].length;
   
   if(!tempStore.isRandom)
     newIndex = (tempStore.previousWalls[tempStore.previousWalls.length - 1] + 1) % arrayLength;
@@ -56,12 +60,12 @@ const applyWallpaper = async() => {
   }else{
     let nextWallIndex: number = findNextIndex(tempStore);
 
-    let setWallResult = tempStore.screen=='HOME'? await DeviceWallpaper.setWallPaper(tempStore.imageArray[nextWallIndex]):
-                        tempStore.screen=='LOCK'? await DeviceWallpaper.setLockScreen(tempStore.imageArray[nextWallIndex]):
-                        await DeviceWallpaper.setBoth(tempStore.imageArray[nextWallIndex]);
+    let setWallResult = tempStore.screen=='HOME'? await DeviceWallpaper.setWallPaper(tempStore.imageArray[tempStore.album][nextWallIndex]):
+                        tempStore.screen=='LOCK'? await DeviceWallpaper.setLockScreen(tempStore.imageArray[tempStore.album][nextWallIndex]):
+                        await DeviceWallpaper.setBoth(tempStore.imageArray[tempStore.album][nextWallIndex]);
   
-    if(tempStore.previousWalls.length == tempStore.imageArray.length)
-      tempStore = {...tempStore, previousWalls: [-1]};
+    if(tempStore.previousWalls.length == tempStore.imageArray[tempStore.album].length)
+      tempStore = {...tempStore, previousWalls: [0]};
     else
       tempStore = {...tempStore, previousWalls: [...tempStore.previousWalls, nextWallIndex]};
     
@@ -70,7 +74,6 @@ const applyWallpaper = async() => {
 }
 
 const backgroundFetchHeadlessTask = async (event) => {
-    let currentTime = new Date();
     if (event.timeout) {
         BackgroundFetch.finish(event.taskId);
         return;
@@ -84,7 +87,7 @@ const backgroundFetchHeadlessTask = async (event) => {
     BackgroundFetch.finish(event.taskId);
 }
 
-function updateLocalStore(currentObj: Partial<localStore>): localStore {
+function upgradeLocalStore(currentObj: Partial<localStore>): localStore {
   const updateImageArray = (imageArray: any): string[][] => {
     
     // Check if it's a 2D array already
@@ -101,10 +104,11 @@ function updateLocalStore(currentObj: Partial<localStore>): localStore {
   return {
     version: localStorageVersion,
     imageArray: updateImageArray(currentObj.imageArray),
+    album: currentObj.isTaskRegistered ? 0 : -1,
     isRandom: currentObj.isRandom ?? false,
     screen: currentObj.screen ?? "HOME",
     isTaskRegistered: currentObj.isTaskRegistered ?? false,
-    previousWalls: currentObj.previousWalls ?? [-1],
+    previousWalls: currentObj.previousWalls == undefined ? [0] : [0, ...currentObj.previousWalls],
   };
 }
 
@@ -113,13 +117,13 @@ const fetchLocalStore = async (): Promise<localStore> => {
   if(localSt){
     let returnObj = JSON.parse(localSt);
     if(returnObj.version !== localStorageVersion){
-      returnObj = updateLocalStore(returnObj);
+      returnObj = upgradeLocalStore(returnObj);
     }
     return returnObj;
   }
 
   // If no data exists in storage, return the default structure
-  return updateLocalStore({});
+  return upgradeLocalStore({});
 }
 
 const GlobalStateContext = createContext<GlobalState | null>(null);
