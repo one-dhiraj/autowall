@@ -75,7 +75,12 @@ function App(): React.JSX.Element {
   }
 
   const setWallpaper = async (duration: number, isRandom: boolean, screen: string, album: number) => {
-   if(screen!=null && album!=null)
+    if(localStorage?.imageArray[album].length == 1){
+      handleBottomNav(1);
+      ToastAndroid.show('Add some wallpapers to the album first!', ToastAndroid.SHORT);
+      return;
+    }
+    if(screen!=null && album!=null)
       try {
         await initBackgroundFetch(duration);
         await updateLocalStorage({isRandom: isRandom, screen: screen, isTaskRegistered: true, album: album});
