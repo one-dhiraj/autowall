@@ -16,10 +16,10 @@ import ImageCard from '../components/ImageCard';
 type Props = PropsWithChildren<{
   albumIndex: number;
   pickImages: (tempArray: string[]) => Promise<string[]>;
-  setShowAlbum: (value: React.SetStateAction<number>) => void;
+  deleteAlbum: (albumIndex: number) => Promise<void>;
 }>;
 
-export default function OneAlbum({albumIndex, pickImages, setShowAlbum}: Props) {
+export default function OneAlbum({albumIndex, pickImages, deleteAlbum}: Props) {
   const {localStorage, updateLocalStorage, isDarkMode, stopBackgroundTask} = useGlobalState();
   
   const addNewImages = async ()=>{
@@ -29,64 +29,44 @@ export default function OneAlbum({albumIndex, pickImages, setShowAlbum}: Props) 
     await updateLocalStorage({imageArray: tempArray});
   }
 
+  const showConfirmation = (title: string, message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: "No", style: "cancel", onPress: () => resolve(false) },
+          { text: "Yes", style: "destructive", onPress: () => resolve(true) },
+        ],
+        { cancelable: false }
+      );
+    });
+  };
+
   const removeImage = async (urlToRemove: string) =>{
-    const showConfirmation = (): Promise<boolean> => {
-      return new Promise((resolve) => {
-        Alert.alert(
-          "Empty Album",
-          "This album is now empty. Do you want to remove it?",
-          [
-            { text: "No", style: "cancel", onPress: () => resolve(false) },
-            { text: "Yes", style: "destructive", onPress: () => resolve(true) },
-          ],
-          { cancelable: false }
-        );
-      });
-    };
     try{
       await RNFS.unlink(urlToRemove.substring(7));
       let tempArray: string[][] = localStorage!.imageArray;
       tempArray[albumIndex] = tempArray[albumIndex].filter(uri => uri != urlToRemove);
       
+      await updateLocalStorage({imageArray: tempArray});
       if(tempArray[albumIndex].length==1){
-        const userConfirmed = await showConfirmation();
+        const userConfirmed = await showConfirmation("Empty Album", "This album is now empty. Do you want to remove it?");
         if (userConfirmed) {
-          tempArray = tempArray.filter((_, index) => index !== albumIndex);
-          if(localStorage?.isTaskRegistered && albumIndex == localStorage?.album)
-            await stopBackgroundTask();
-          setShowAlbum(-1);
+          console.log("hi")
+          await deleteAlbum(albumIndex);
         }
       }
-      await updateLocalStorage({
-        imageArray: tempArray,
-        previousWalls: [0],
-      })
-
     }catch(err){
       console.error("Error occured while file deletion: ", err);
     }
   };
 
   const removeAlbum = async ()=>{
-    Alert.alert("Delete Album?", "Are you sure you want to delete this entire album? This action won't be reversible!",
-      [
-        {
-          text: "Cancel",
-        },
-        {
-          text: "Yes",
-          onPress: async () => {
-            let tempArray = localStorage?.imageArray.filter((_, index)=> index!=albumIndex)
-            if(localStorage?.isTaskRegistered && albumIndex == localStorage?.album)
-              await stopBackgroundTask();
-            await updateLocalStorage({imageArray: tempArray});
-            setShowAlbum(-1);
-          },
-          style: "destructive"
-        },
-      ],
-      { cancelable: true } // Allows dismissal by tapping outside the alert on Android
-    )
+    const userConfirmed = await showConfirmation("Delete Album?", "Are you sure you want to delete this entire album? This action won't be reversible!");
+    if (userConfirmed) {
+      await deleteAlbum(albumIndex);
+    }
   }
 
   return (

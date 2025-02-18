@@ -12,7 +12,6 @@ import {
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { saveFileToAppStorage, useGlobalState } from '../components/utilFunctions'
-import RNFS from 'react-native-fs';
 import DocumentPicker, {types} from 'react-native-document-picker';
 import AntDesign from 'react-native-vector-icons/AntDesign'
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons'
@@ -20,7 +19,7 @@ import NewAlbumInput from '../components/NewAlbumInput'
 import OneAlbum from './OneAlbum';
 
 export default function AllAlbums() {
-  const {localStorage, updateLocalStorage, isDarkMode} = useGlobalState();
+  const {localStorage, updateLocalStorage, isDarkMode, stopBackgroundTask} = useGlobalState();
   const [newAlbumInput, setNewAlbumInput] = useState<boolean>(false);
   const [showAlbum, setShowAlbum] = useState<number>(-1);
   const [allAlbumMode, setAllAlbumMode] = useState<"grid"|"list">("list");
@@ -60,6 +59,14 @@ export default function AllAlbums() {
       newImageArray?.push(tempArray);
       await updateLocalStorage({imageArray: newImageArray});
     }
+  }
+
+  const deleteAlbum = async (albumIndex: number) => {
+    setShowAlbum(-1);
+    let tempArray = localStorage?.imageArray.filter((_, index)=> index!=albumIndex)
+    if(localStorage?.isTaskRegistered && albumIndex == localStorage?.album)
+      await stopBackgroundTask();
+    await updateLocalStorage({imageArray: tempArray});
   }
   
   useEffect(()=>{
@@ -130,7 +137,7 @@ export default function AllAlbums() {
             </ScrollView>
           </View>
           :
-          <OneAlbum albumIndex={showAlbum} pickImages={pickImages} setShowAlbum={setShowAlbum}/>
+          <OneAlbum albumIndex={showAlbum} pickImages={pickImages} deleteAlbum={deleteAlbum}/>
         :
         <View style={styles.noImageContainer}>
           <View style={{width: "100%", height: 400}}>
