@@ -1,79 +1,36 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Auto Wall
 
-# Getting Started
+Auto Wall makes your device come alive by automatically changing wallpapers based on your preferences. Whether you want to showcase your favorite memories, stunning landscapes, or curated images from your Google Drive, Auto Wall gives you complete control over your wallpapers.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Key Features
 
-## Step 1: Start the Metro Server
+- **Choose Your Images:** Select any number of images from your device or Google Drive.
+- **Albums:** Group pictures into albums for more organization and variety.
+- **Custom Wallpaper Schedules:** Decide how often wallpapers should change.
+- **Screen-Specific Settings:** Apply wallpapers to your home screen, lock screen, or both.
+- **Shuffle or Sequence:** Shuffle through your images or use them in a fixed sequence.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Why Auto Wall?
 
-To start Metro, run the following command from the _root_ of your React Native project:
+With a simple and user-friendly interface, Auto Wall lets you enjoy a dynamic wallpaper experience without the hassle of manual changes. Whether you prefer a professional vibe during the day or a personal touch for your device at night, Auto Wall adapts to your needs. Read our *[privacy policy](https://github.com/one-dhiraj/autowall/blob/main/PrivacyPolicy.md)* to know how we collect your data. Spoiler alert: we don't ;)
 
-```bash
-# using npm
-npm start
+## Coming Soon
 
-# OR using Yarn
-yarn start
-```
+We’re excited to bring even more features in the future:
 
-## Step 2: Start your Application
+- **Time-Based Transitions:** Set wallpapers to appear at certain times of the day.
+- **Day and Night Transitions:** Change wallpapers based on sunrise and sunset.
+- **Screen-Based Wallpapers:** Set different wallpapers for your home screen and lock screen.
+- And more to enhance your experience!
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## Take Control of Your Device
 
-### For Android
+Take control of your device’s look and feel with Auto Wall. [Download now](../../releases) and transform your device into a personalized gallery because your wallpapers reflect who you are!
 
-```bash
-# using npm
-npm run android
+## Found Something?
 
-# OR using Yarn
-yarn android
-```
+If you have any ideas for new features, suggestions for improvements, found a bug, or something, submit it from the **[Issues](../../issues)** tab above, and we will get right on it!
 
-### For iOS
+## Wanna Contribute?
 
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+If you like what we are doing here and wanna contribute to it yourself, feel free to create a **[fork](../../fork)** and bring those wild ideas of yours to life!
